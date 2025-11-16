@@ -1,14 +1,15 @@
 import os
 from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse, JSONResponse
-import httpx
+from leads import router as leads_router
 
 app = FastAPI()
+app.include_router(leads_router)
 
 # Note: in real use, set these as environment variables
 PIPEDRIVE_CLIENT_ID = os.getenv("PIPEDRIVE_CLIENT_ID", "YOUR_CLIENT_ID_HERE")
 PIPEDRIVE_CLIENT_SECRET = os.getenv("PIPEDRIVE_CLIENT_SECRET", "YOUR_CLIENT_SECRET_HERE")
-PIPEDRIVE_REDIRECT_URI = os.getenv("PIPEDRIVE_REDIRECT_URI", "http://localhost:5173/callback")
+PIPEDRIVE_REDIRECT_URI = os.getenv("PIPEDRIVE_REDIRECT_URI", "http://localhost:8000/callback")
 
 # Simple in-memory storage for demo only
 oauth_tokens: dict[str, dict] = {}
