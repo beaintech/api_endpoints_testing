@@ -8,8 +8,8 @@ router = APIRouter()
 
 # Basic config for Pipedrive & Reonic
 PIPEDRIVE_API_TOKEN = os.getenv("PIPEDRIVE_API_TOKEN", "YOUR_API_TOKEN_HERE")
-PIPEDRIVE_COMPANY_DOMAIN = os.getenv("PIPEDRIVE_COMPANY_DOMAIN", "yourcompany")  # e.g. "mycompany"
-REONIC_API_BASE = os.getenv("REONIC_API_BASE", "http://localhost:8000")  # mock or real Reonic URL
+PIPEDRIVE_COMPANY_DOMAIN = os.getenv("PIPEDRIVE_COMPANY_DOMAIN", "yourcompany")  
+REONIC_API_BASE = os.getenv("REONIC_API_BASE", "http://localhost:8000") 
 
 PIPEDRIVE_BASE_URL = f"https://{PIPEDRIVE_COMPANY_DOMAIN}.pipedrive.com/v1"
 
@@ -36,15 +36,12 @@ async def get_leads():
       GET https://{COMPANYDOMAIN}.pipedrive.com/v1/leads?api_token=APITOKEN
     """
 
-    # 1. Token check – same as real code
     if not PIPEDRIVE_API_TOKEN:
         raise HTTPException(status_code=400, detail="PIPEDRIVE_API_TOKEN is not set.")
 
-    # 2. Show where the real URL and params would be used
     url = f"{PIPEDRIVE_BASE_URL}/leads"
     params = {"api_token": PIPEDRIVE_API_TOKEN}
 
-    # 3. Mock response object that looks like httpx.Response
     class MockResponse:
         def __init__(self, payload, status_code=200):
             self._payload = payload
@@ -83,23 +80,18 @@ async def get_leads():
 
     resp = MockResponse(mock_payload, status_code=200)
 
-    # 4. Keep the JSON parsing try/except structure
     try:
         data = resp.json()
     except Exception:
         raise HTTPException(status_code=500, detail="Invalid JSON from mock Pipedrive")
 
-    # 5. Keep the status_code + success check logic
     if resp.status_code != 200 or not data.get("success", False):
         raise HTTPException(
             status_code=resp.status_code,
             detail=data.get("error") or data.get("message") or "Pipedrive error",
         )
 
-    # 6. Return JSON, exactly like real code would
     return JSONResponse(content=data)
-
-
 
 # 2) POST /create_deal – create a deal in Pipedrive
 @router.post("/create_lead")
