@@ -2,9 +2,12 @@ import os
 from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse, JSONResponse
 from leads import router as leads_router
+from products import router as products_router
 
 app = FastAPI()
 app.include_router(leads_router)
+app.include_router(products_router)
+
 
 # Note: in real use, set these as environment variables
 PIPEDRIVE_CLIENT_ID = os.getenv("PIPEDRIVE_CLIENT_ID", "YOUR_CLIENT_ID_HERE")

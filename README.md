@@ -42,6 +42,8 @@ POST   /create_lead
 PATCH  /update_lead/{lead_id}
 DELETE /delete_lead/{lead_id}
 POST   /sync_leads
+
+POST   /add_product
 ```
 
 ### Swagger UI
@@ -49,7 +51,7 @@ http://localhost:8000/docs
 
 ---
 
-## POST Examples
+## POST Examples (Leads)
 
 ### Create a Lead (POST /create_lead)
 
@@ -128,6 +130,50 @@ Trigger the sync:
 http://localhost:8000/sync_leads
 
 This endpoint does **not** require a request body.
+
+---
+
+# Product Endpoints
+
+## Add a Product (POST /add_product)
+
+You can send the full Pipedrive-style JSON body, including price entries.
+
+Example JSON:
+```
+{
+  "name": "Test Product",
+  "code": "PRD-001",
+  "unit": "pcs",
+  "tax": 19,
+  "active_flag": 1,
+  "selectable": 1,
+  "visible_to": "1",
+  "owner_id": 999,
+  "prices": [
+    {
+      "price": 120,
+      "currency": "EUR",
+      "cost": 60,
+      "overhead_cost": 10
+    }
+  ]
+}
+```
+
+Returns mocked Pipedrive product payload:
+```
+{
+  "success": true,
+  "data": {
+    "id": 501,
+    "name": "Test Product",
+    "code": "PRD-001",
+    "unit": "pcs",
+    "prices": [...]
+  }
+}
+```
 
 ---
 
