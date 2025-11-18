@@ -3,11 +3,12 @@ from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse, JSONResponse
 from leads import router as leads_router
 from products import router as products_router
+from reonic_sync import router as reonic_router 
 
 app = FastAPI()
-app.include_router(leads_router)
-app.include_router(products_router)
-
+app.include_router(leads_router, prefix="/leads", tags=["Leads"])
+app.include_router(products_router, prefix="/products", tags=["Products"])
+app.include_router(reonic_router, prefix="/reonic", tags=["Reonic Integration"])
 
 # Note: in real use, set these as environment variables
 PIPEDRIVE_CLIENT_ID = os.getenv("PIPEDRIVE_CLIENT_ID", "YOUR_CLIENT_ID_HERE")

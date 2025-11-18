@@ -15,9 +15,7 @@ pip install fastapi "uvicorn[standard]" python-dotenv
 
 ## Run Locally
 
-```
 uvicorn main:app --reload --port 8000
-```
 
 Server starts at:
 
@@ -61,8 +59,6 @@ Open Swagger UI:
 http://localhost:8000/docs
 
 POST → `/create_lead` → “Try it out” → paste:
-
-```
 {
   "title": "Lead 158",
   "amount": 3000,
@@ -75,53 +71,37 @@ POST → `/create_lead` → “Try it out” → paste:
   "visible_to": "1",
   "was_seen": true
 }
-```
 
 ---
 
 ## Update a Lead (PATCH /update_lead/{lead_id})
-
-Example URL:
-```
 http://localhost:8000/update_lead/101
-```
 
 Example body:
-```
 {
   "title": "Updated Lead Title",
   "amount": 5000,
   "currency": "EUR"
 }
-```
 
 All fields are optional.
 
 ---
 
 ## Delete a Lead (DELETE /delete_lead/{lead_id})
-
-Example:
-```
 http://localhost:8000/delete_lead/101
-```
+
 
 Returns:
-```
 {
   "success": true,
   "data": { "id": 101, "deleted": true }
 }
-```
 
 ---
 
 ## Fetch a Single Lead (GET /get_lead/{lead_id})
-
-Example:
-```
 http://localhost:8000/get_lead/101
-```
 
 ---
 
@@ -148,6 +128,62 @@ Trigger the product sync:
 http://localhost:8000/sync_reonic_products
 
 It loads a mocked catalog from Reonic, converts them to Pipedrive product JSON, and returns the mocked POST bodies.
+
+---
+
+# Reonic → Pipedrive (Deals & Activities)
+
+Reonic does **not** create Leads, but it can push updates to existing CRM Deals and Activities.
+
+These endpoints simulate project → CRM sync flows.
+
+## Update Deal Status (POST /reonic_push_status_to_pipedrive)
+
+This endpoint simulates sending project progress from Reonic to an existing Pipedrive Deal.
+
+Typical updated fields:
+- `stage_id`
+- `status`
+- `probability`
+- `value_amount` / `value_currency`
+- `expected_close_date`
+- `technical_status`
+- `reonic_project_id`
+
+Example use case:
+- Engineering milestone reached → update CRM Deal stage/value.
+
+---
+
+## Create Activity (POST /reonic_push_activity_to_pipedrive)
+
+This simulates Reonic logging an activity into Pipedrive, such as:
+
+- Installation completed  
+- Site visit  
+- Maintenance  
+- Commissioning  
+- General notes  
+
+Typical fields:
+- `subject`
+- `type` (task, call, meeting, installation)
+- `deal_id`
+- `person_id`
+- `due_date`
+- `note`
+- `reonic_project_id`
+
+---
+
+## Combined Project Update (POST /reonic_push_project_update)
+
+This endpoint performs two mock actions:
+
+1. **Updates a Deal** (stage/value/date/status)  
+2. **Creates an Activity** (log an event about the update)  
+
+Simulates how Reonic would inform CRM when a project hits a major milestone.
 
 ---
 
@@ -201,3 +237,4 @@ Returns mocked Pipedrive product payload:
 • URL structure and JSON payloads match real Pipedrive API behavior.  
 • Safe for demos, onboarding, teaching API flows, and integration planning.  
 • Can be used to prototype Pipedrive → Reonic sync pipelines before building the real one.
+
