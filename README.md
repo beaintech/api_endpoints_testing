@@ -1,9 +1,8 @@
 # Pipedrive Local Playground (FastAPI)
 
 A fully local sandbox for simulating Pipedrive API calls using mocked data.  
-This playground is designed for demonstrating how Pipedrive → Reonic integrations work **without requiring real credentials**.
+This playground is designed for demonstrating how Pipedrive <-> Reonic integrations work **without requiring real credentials**. To connect it to a real Pipedrive account you only need three changes: switch the base URL to the official /api/v2 endpoint, change the deal value structure to use value and currency as separate fields as required by Pipedrive, and add a small mapping layer from Reonic’s semantic field names to the actual Pipedrive custom field keys. After that you can replace the internal MockResponse objects with real HTTP calls using a client such as httpx or requests.
 
-In this demo the integration is still fully mocked. To connect it to a real Pipedrive account you only need three changes: switch the base URL to the official /api/v2 endpoint, change the deal value structure to use value and currency as separate fields as required by Pipedrive, and add a small mapping layer from Reonic’s semantic field names to the actual Pipedrive custom field keys. After that you can replace the internal MockResponse objects with real HTTP calls using a client such as httpx or requests.
 ---
 
 ## Installation
