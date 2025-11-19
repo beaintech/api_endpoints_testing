@@ -141,6 +141,8 @@ Reonic does **not** create Leads, but it can push updates to existing CRM Deals 
 
 These endpoints simulate project → CRM sync flows.
 
+http://localhost:8000/reonic_push_status_to_pipedrive
+
 ## Update Deal Status (POST /reonic_push_status_to_pipedrive)
 
 This endpoint simulates sending project progress from Reonic to an existing Pipedrive Deal.
@@ -160,6 +162,8 @@ Example use case:
 ---
 
 ## Create Activity (POST /reonic_push_activity_to_pipedrive)
+
+http://localhost:8000/reonic_push_activity_to_pipedrive
 
 This simulates Reonic logging an activity into Pipedrive, such as:
 
@@ -182,6 +186,8 @@ Typical fields:
 
 ## Combined Project Update (POST /reonic_push_project_update)
 
+http://localhost:8000/reonic_push_project_update
+ 
 This endpoint performs two mock actions:
 
 1. **Updates a Deal** (stage/value/date/status)  
@@ -195,7 +201,11 @@ Simulates how Reonic would inform CRM when a project hits a major milestone.
 
 ## Add a Product (POST /add_product)
 
+http://localhost:8000/add_product
+
 You can send the full Pipedrive-style JSON body, including price entries.
+
+http://localhost:8000/sync_reonic_products
 
 Example JSON:
 ```
@@ -238,6 +248,8 @@ Returns mocked Pipedrive product payload:
 # Organization Endpoint
 
 ## Add an Organization (POST /add_organization)
+
+http://localhost:8000/add_organization
 
 This endpoint creates a mocked Pipedrive Organization.  
 It mirrors the official tutorial example (only `name` is required), but also accepts optional fields such as `owner_id`, `visible_to`, and `address`.
