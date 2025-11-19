@@ -1,16 +1,13 @@
-import os
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
+from pipedrive_config import (
+    PIPEDRIVE_API_TOKEN,
+    PIPEDRIVE_BASE_URL,
+    REONIC_API_BASE,
+)
 
 router = APIRouter()
-
-# Basic config for Pipedrive & Reonic
-PIPEDRIVE_API_TOKEN = os.getenv("PIPEDRIVE_API_TOKEN", "YOUR_API_TOKEN_HERE")
-PIPEDRIVE_COMPANY_DOMAIN = os.getenv("PIPEDRIVE_COMPANY_DOMAIN", "yourcompany")  
-REONIC_API_BASE = os.getenv("REONIC_API_BASE", "http://localhost:8000") 
-
-PIPEDRIVE_BASE_URL = f"https://{PIPEDRIVE_COMPANY_DOMAIN}.pipedrive.com/v1"
 class ProductPrice(BaseModel):
     price: float | None = None
     currency: str | None = None

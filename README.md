@@ -1,7 +1,9 @@
 # Pipedrive Local Playground (FastAPI)
 
 A fully local sandbox for simulating Pipedrive API calls using mocked data.  
-This playground is designed for demonstrating how Pipedrive <-> Reonic integrations work **without requiring real credentials**. To connect it to a real Pipedrive account you only need three changes: switch the base URL to the official /api/v2 endpoint, change the deal value structure to use value and currency as separate fields as required by Pipedrive, and add a small mapping layer from Reonic’s semantic field names to the actual Pipedrive custom field keys. After that you can replace the internal MockResponse objects with real HTTP calls using a client such as httpx or requests.
+This playground is designed for demonstrating how Pipedrive <-> Reonic integrations work **without requiring real credentials**.
+
+ To connect it to a real Pipedrive account you only need three changes: switch the base URL to the official /api/v2 endpoint, change the deal value structure to use value and currency as separate fields as required by Pipedrive, and add a small mapping layer from Reonic’s semantic field names to the actual Pipedrive custom field keys. After that you can replace the internal MockResponse objects with real HTTP calls using a client such as httpx or requests.
 
 ---
 
@@ -44,6 +46,8 @@ POST   /sync_reonic_to_pipedrive
 
 POST   /add_product
 POST   /sync_reonic_products
+
+POST /add_organization
 ```
 
 ### Swagger UI
@@ -228,6 +232,27 @@ Returns mocked Pipedrive product payload:
   }
 }
 ```
+
+---
+
+# Organization Endpoint
+
+## Add an Organization (POST /add_organization)
+
+This endpoint creates a mocked Pipedrive Organization.  
+It mirrors the official tutorial example (only `name` is required), but also accepts optional fields such as `owner_id`, `visible_to`, and `address`.
+
+### Minimal example JSON
+{
+  "name": "Org Inc test"
+}
+
+{
+  "name": "Org Inc test",
+  "owner_id": 12345,
+  "visible_to": "3",
+  "address": "Main Street 1, 40210 Düsseldorf"
+}
 
 ---
 

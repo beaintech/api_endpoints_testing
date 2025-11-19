@@ -1,24 +1,11 @@
-import os
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
+from pipedrive_config import PIPEDRIVE_API_TOKEN, PIPEDRIVE_BASE_URL
 
 router = APIRouter()
 
-# Basic config for Pipedrive & Reonic
-PIPEDRIVE_API_TOKEN = os.getenv("PIPEDRIVE_API_TOKEN", "YOUR_API_TOKEN_HERE")
-PIPEDRIVE_COMPANY_DOMAIN = os.getenv("PIPEDRIVE_COMPANY_DOMAIN", "yourcompany")
-REONIC_API_BASE = os.getenv("REONIC_API_BASE", "http://localhost:8000")
-
-PIPEDRIVE_BASE_URL = f"https://{PIPEDRIVE_COMPANY_DOMAIN}.pipedrive.com/v1"
-
-
 class OrganizationCreate(BaseModel):
-    """
-    Minimal payload for creating an Organization in Pipedrive.
-    Mirrors the Node.js tutorial example where only `name` is required.
-    You can extend this later with address, label, owner_id, etc.
-    """
     name: str
     owner_id: int | None = None
     visible_to: str | None = None
@@ -27,17 +14,6 @@ class OrganizationCreate(BaseModel):
 
 @router.post("/add_organization")
 async def add_organization(body: OrganizationCreate):
-    """
-    Create a (mocked) Pipedrive Organization.
-
-    Tutorial equivalent of:
-    POST https://{company}.pipedrive.com/v1/organizations?api_token=TOKEN
-
-    This endpoint does not call the real Pipedrive API.
-    It builds the request payload and returns a mocked response
-    so you can inspect what would be sent.
-    """
-
     if not PIPEDRIVE_API_TOKEN:
         raise HTTPException(status_code=400, detail="PIPEDRIVE_API_TOKEN is not set.")
 
