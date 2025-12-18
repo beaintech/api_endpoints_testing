@@ -81,9 +81,6 @@ POST   /upsert_deal_by_reonic_project_id
 
 ### Create a Lead (POST /leads)
 
-Open Swagger UI:
-[http://localhost:8000/docs](http://localhost:8000/docs)
-
 POST → `/leads` → “Try it out” → paste:
 
 ```json

@@ -12,7 +12,7 @@ class OrganizationCreate(BaseModel):
     address: str | None = None
 
 
-@router.post("/add_organization")
+@router.post("")
 async def add_organization(body: OrganizationCreate):
     if not PIPEDRIVE_API_TOKEN:
         raise HTTPException(status_code=400, detail="PIPEDRIVE_API_TOKEN is not set.")

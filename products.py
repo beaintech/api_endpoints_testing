@@ -8,6 +8,7 @@ from pipedrive_config import (
 )
 
 router = APIRouter()
+
 class ProductPrice(BaseModel):
     price: float | None = None
     currency: str | None = None
@@ -25,7 +26,7 @@ class ProductCreate(BaseModel):
     owner_id: int | None = None
     prices: list[ProductPrice] | None = None
 
-@router.post("/add_product")
+@router.post("")
 async def add_product(body: ProductCreate):
     """
     Create a (mocked) Pipedrive Product.

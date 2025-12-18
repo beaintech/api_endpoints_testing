@@ -34,7 +34,7 @@ class LeadUpdate(BaseModel):
     was_seen: bool | None = None
 
 # 1) GET /get_leads – fetch leads from Pipedrive
-@router.get("/leads")
+@router.get("")
 async def get_leads():
     """
     Fetch leads from Pipedrive using api_token authentication (mocked).
@@ -99,7 +99,7 @@ async def get_leads():
     return JSONResponse(content=data)
 
 # GET /get_lead/{lead_id} – fetch a single lead
-@router.get("/leads/{lead_id}")
+@router.get("/{lead_id}")
 async def get_lead(lead_id: int):
     """
     Fetch a single lead from Pipedrive by ID (mocked).
@@ -153,7 +153,7 @@ async def get_lead(lead_id: int):
     return JSONResponse(content=data, status_code=resp.status_code)
 
 # 2) POST /create_lead – create a lead in Pipedrive
-@router.post("/leads")
+@router.post("")
 async def create_lead(body: LeadCreate):
     """
     Create a Pipedrive Lead using official Pipedrive fields (mocked).
@@ -237,7 +237,7 @@ async def create_lead(body: LeadCreate):
     return JSONResponse(content=data, status_code=resp.status_code)
 
 # PATCH /leads/{lead_id} – update a lead
-@router.patch("/leads/{lead_id}")
+@router.patch("/{lead_id}")
 async def update_lead(lead_id: int, body: LeadUpdate):
     """
     Update an existing lead in Pipedrive (mocked).
@@ -320,7 +320,7 @@ async def update_lead(lead_id: int, body: LeadUpdate):
     return JSONResponse(content=data, status_code=resp.status_code)
 
 # DELETE /leads/{lead_id} – delete a lead
-@router.delete("/leads/{lead_id}")
+@router.delete("/{lead_id}")
 async def delete_lead(lead_id: int):
     """
     Delete a lead in Pipedrive by ID (mocked).
