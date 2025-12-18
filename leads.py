@@ -1,10 +1,10 @@
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import JSONResponse
+from typing import Any, Dict
 from pydantic import BaseModel
 from pipedrive_config import (
     PIPEDRIVE_API_TOKEN,
     PIPEDRIVE_BASE_URL,
-    REONIC_API_BASE,
 )
 
 router = APIRouter()
@@ -34,7 +34,7 @@ class LeadUpdate(BaseModel):
     was_seen: bool | None = None
 
 # 1) GET /get_leads – fetch leads from Pipedrive
-@router.get("/get_leads")
+@router.get("/leads")
 async def get_leads():
     """
     Fetch leads from Pipedrive using api_token authentication (mocked).
@@ -99,7 +99,7 @@ async def get_leads():
     return JSONResponse(content=data)
 
 # GET /get_lead/{lead_id} – fetch a single lead
-@router.get("/get_lead/{lead_id}")
+@router.get("/leads/{lead_id}")
 async def get_lead(lead_id: int):
     """
     Fetch a single lead from Pipedrive by ID (mocked).
@@ -152,8 +152,8 @@ async def get_lead(lead_id: int):
 
     return JSONResponse(content=data, status_code=resp.status_code)
 
-# 2) POST /create_deal – create a deal in Pipedrive
-@router.post("/create_lead")
+# 2) POST /create_lead – create a lead in Pipedrive
+@router.post("/leads")
 async def create_lead(body: LeadCreate):
     """
     Create a Pipedrive Lead using official Pipedrive fields (mocked).
@@ -236,8 +236,8 @@ async def create_lead(body: LeadCreate):
 
     return JSONResponse(content=data, status_code=resp.status_code)
 
-# NEW: PATCH /update_lead/{lead_id} – update a lead
-@router.patch("/update_lead/{lead_id}")
+# PATCH /leads/{lead_id} – update a lead
+@router.patch("/leads/{lead_id}")
 async def update_lead(lead_id: int, body: LeadUpdate):
     """
     Update an existing lead in Pipedrive (mocked).
@@ -251,22 +251,35 @@ async def update_lead(lead_id: int, body: LeadUpdate):
     url = f"{PIPEDRIVE_BASE_URL}/leads/{lead_id}"
     params = {"api_token": PIPEDRIVE_API_TOKEN}
 
-    # Build partial update payload
-    payload = {
-        "title": body.title,
-        "value": {
-            "amount": body.amount,
-            "currency": body.currency
-        } if body.amount is not None and body.currency is not None else None,
-        "owner_id": body.owner_id,
-        "label_ids": body.label_ids,
-        "person_id": body.person_id,
-        "organization_id": body.organization_id,
-        "expected_close_date": body.expected_close_date,
-        "visible_to": body.visible_to,
-        "was_seen": body.was_seen,
-    }
-    payload = {k: v for k, v in payload.items() if v is not None}
+    payload: Dict[str, Any] = {}
+
+    if body.title is not None:
+        payload["title"] = body.title
+    if body.owner_id is not None:
+        payload["owner_id"] = body.owner_id
+    if body.label_ids is not None:
+        payload["label_ids"] = body.label_ids
+    if body.person_id is not None:
+        payload["person_id"] = body.person_id
+    if body.organization_id is not None:
+        payload["organization_id"] = body.organization_id
+    if body.expected_close_date is not None:
+        payload["expected_close_date"] = body.expected_close_date
+    if body.visible_to is not None:
+        payload["visible_to"] = body.visible_to
+    if body.was_seen is not None:
+        payload["was_seen"] = body.was_seen
+
+    if body.amount is not None or body.currency is not None:
+        value: Dict[str, Any] = {}
+        if body.amount is not None:
+            value["amount"] = body.amount
+        if body.currency is not None:
+            value["currency"] = body.currency
+        payload["value"] = value
+
+    if not payload:
+        raise HTTPException(status_code=400, detail="No fields to update.")
 
     class MockResponse:
         def __init__(self, payload, status_code=200):
@@ -303,10 +316,11 @@ async def update_lead(lead_id: int, body: LeadUpdate):
             status_code=resp.status_code,
             detail=data.get("error") or data.get("message") or "Pipedrive error",
         )
+
     return JSONResponse(content=data, status_code=resp.status_code)
 
-# DELETE /delete_lead/{lead_id} – delete a lead
-@router.delete("/delete_lead/{lead_id}")
+# DELETE /leads/{lead_id} – delete a lead
+@router.delete("/leads/{lead_id}")
 async def delete_lead(lead_id: int):
     """
     Delete a lead in Pipedrive by ID (mocked).
@@ -355,106 +369,3 @@ async def delete_lead(lead_id: int):
         )
 
     return JSONResponse(content=data, status_code=resp.status_code)
-
-# 3) POST /sync_leads – example: Pipedrive → Reonic sync
-@router.post("/sync_leads")
-async def sync_leads():
-    """
-    Simple example of a sync flow: Pipedrive → Reonic.
-
-    1) Fetch leads from Pipedrive.
-    2) Transform to a simpler structure.
-    3) POST them to a Reonic endpoint: {REONIC_API_BASE}/leads/import
-    """
-    if not PIPEDRIVE_API_TOKEN:
-        raise HTTPException(status_code=400, detail="PIPEDRIVE_API_TOKEN is not set.")
-
-    pipedrive_url = f"{PIPEDRIVE_BASE_URL}/leads"
-    pipedrive_params = {"api_token": PIPEDRIVE_API_TOKEN}
-
-    class MockResponse:
-        def __init__(self, payload, status_code=200):
-            self._payload = payload
-            self.status_code = status_code
-
-        def json(self):
-            return self._payload
-
-    pipedrive_mock_payload = {
-        "success": True,
-        "request": {
-            "method": "GET",
-            "endpoint": pipedrive_url,
-            "query_params": pipedrive_params,
-        },
-        "data": [
-            {
-                "id": 101,
-                "title": "Mock Lead A",
-                "person_id": 10,
-                "owner_id": 1,
-                "add_time": "2025-01-01 10:00:00",
-            },
-            {
-                "id": 102,
-                "title": "Mock Lead B",
-                "person_id": 11,
-                "owner_id": 2,
-                "add_time": "2025-01-02 15:30:00",
-            }
-        ]
-    }
-
-    pd_resp = MockResponse(pipedrive_mock_payload, status_code=200)
-
-    try:
-        leads_data = pd_resp.json()
-    except Exception:
-        raise HTTPException(status_code=500, detail="Invalid JSON from mock Pipedrive")
-
-    if pd_resp.status_code != 200 or not leads_data.get("success", False):
-        raise HTTPException(
-            status_code=pd_resp.status_code,
-            detail=leads_data.get("error") or leads_data.get("message") or "Pipedrive error",
-        )
-
-    raw_leads = leads_data.get("data", [])
-
-    transformed_leads = []
-    for lead in raw_leads:
-        transformed_leads.append(
-            {
-                "external_id": lead.get("id"),
-                "title": lead.get("title"),
-                "source": "pipedrive",
-                "person_id": lead.get("person_id"),
-                "owner_id": lead.get("owner_id"),
-                "add_time": lead.get("add_time"),
-            }
-        )
-
-    reonic_url = f"{REONIC_API_BASE}/leads/import"
-
-    reonic_mock_payload = {
-        "success": True,
-        "request": {
-            "method": "POST",
-            "endpoint": reonic_url,
-            "json_body": {"leads": transformed_leads},
-        },
-        "imported": len(transformed_leads),
-        "system": "reonic-mock",
-        "note": "This is a mock import; no real HTTP request was made.",
-    }
-
-    reonic_status = 200
-    reonic_body = reonic_mock_payload
-
-    return JSONResponse(
-        content={
-            "pipedrive_leads_count": len(raw_leads),
-            "sent_to_reonic_count": len(transformed_leads),
-            "reonic_status_code": reonic_status,
-            "reonic_response": reonic_body,
-        }
-    )
