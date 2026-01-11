@@ -35,9 +35,9 @@ http://localhost:8000
 /sync_reonic_products → /sync/reonic-to-pipedrive/products
 /add_product → /products
 /add_organization → /organizations
-/reonic_push_status_to_pipedrive → /reonic/push/deal-status
-/reonic_push_activity_to_pipedrive → /reonic/push/activity
-/reonic_push_project_update → /reonic/push/project-update
+/reonic_push_status_to_pipedrive → /reonic-push-deal-status
+/reonic_push_activity_to_pipedrive → /reonic-push-activity
+/reonic_push_project_update → /reonic-push-project-update
 
 ---
 
@@ -171,7 +171,7 @@ Reonic does **not** create Leads, but it can push updates to existing CRM Deals 
 
 These endpoints simulate project → CRM sync flows.
 
-[http://localhost:8000/reonic/push/deal-status](http://localhost:8000/reonic/push/deal-status)
+[http://localhost:8000/reonic-push/deal-status](http://localhost:8000/reonic/push/deal-status)
 
 ## Update Deal Status (POST /reonic/push/deal-status)
 
@@ -222,7 +222,7 @@ Typical fields:
 
 ## Combined Project Update (POST /reonic/push/project-update)
 
-[http://localhost:8000/reonic/push/project-update](http://localhost:8000/reonic/push/project-update)
+[http://localhost:8000/reonic-push-project-update](http://localhost:8000/reonic/push/project-update)
 
 This endpoint performs two mock actions:
 

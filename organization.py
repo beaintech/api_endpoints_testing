@@ -2,14 +2,15 @@ from fastapi import APIRouter, HTTPException
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 from pipedrive_config import PIPEDRIVE_API_TOKEN, PIPEDRIVE_BASE_URL
+from typing import Optional
 
 router = APIRouter()
 
 class OrganizationCreate(BaseModel):
-    name: str
-    owner_id: int | None = None
-    visible_to: str | None = None
-    address: str | None = None
+    name: Optional[str] = None
+    owner_id: Optional[int] = None
+    visible_to: Optional[str] = None
+    address: Optional[str] = None
 
 
 @router.post("")

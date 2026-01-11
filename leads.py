@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import JSONResponse
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 from pydantic import BaseModel
 from pipedrive_config import (
     PIPEDRIVE_API_TOKEN,
@@ -11,27 +11,27 @@ router = APIRouter()
 
 class LeadCreate(BaseModel):
     title: str
-    amount: float | None = None
-    currency: str | None = None
-    owner_id: int | None = None
-    label_ids: list[str] | None = None
-    person_id: int | None = None
-    organization_id: int | None = None
-    expected_close_date: str | None = None  # YYYY-MM-DD
-    visible_to: str | None = None
-    was_seen: bool | None = None
+    amount: Optional[float] = None
+    currency: Optional[str] = None
+    owner_id: Optional[int] = None
+    label_ids: Optional[list[str]] = None
+    person_id: Optional[int] = None
+    organization_id: Optional[int] = None
+    expected_close_date: Optional[str] = None  # YYYY-MM-DD
+    visible_to: Optional[str] = None
+    was_seen: Optional[bool] = None
 
 class LeadUpdate(BaseModel):
-    title: str | None = None
-    amount: float | None = None
-    currency: str | None = None
-    owner_id: int | None = None
-    label_ids: list[str] | None = None
-    person_id: int | None = None
-    organization_id: int | None = None
-    expected_close_date: str | None = None
-    visible_to: str | None = None
-    was_seen: bool | None = None
+    title: Optional[str] = None
+    amount: Optional[float] = None
+    currency: Optional[str] = None
+    owner_id: Optional[int] = None
+    label_ids: Optional[list[str]] = None
+    person_id: Optional[int] = None
+    organization_id: Optional[int] = None
+    expected_close_date: Optional[str] = None
+    visible_to: Optional[str] = None
+    was_seen: Optional[bool] = None
 
 # 1) GET /get_leads – fetch leads from Pipedrive
 @router.get("")

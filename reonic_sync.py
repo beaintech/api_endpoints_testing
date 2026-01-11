@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import JSONResponse
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 from pydantic import BaseModel
 from pipedrive_config import (
     PIPEDRIVE_API_TOKEN,
@@ -11,58 +11,58 @@ from pipedrive_config import (
 class ReonicWebhookEvent(BaseModel):
     event_type: str
     reonic_project_id: str
-    technical_status: str | None = None
-    deal_id: int | None = None
+    technical_status: Optional[str] = None
+    deal_id: Optional[int] = None
 router = APIRouter()
 
 #  Reonic → Pipedrive Endpoints (Deals + Activities + Project Update)
 class ReonicDealStatusUpdate(BaseModel):
     deal_id: int
-    stage_id: int | None = None
-    status: str | None = None
-    probability: int | None = None
-    value_amount: float | None = None
-    value_currency: str | None = None
-    expected_close_date: str | None = None
-    technical_status: str | None = None
-    reonic_project_id: str | None = None
+    stage_id: Optional[int] = None
+    status: Optional[str] = None
+    probability: Optional[int] = None
+    value_amount: Optional[float] = None
+    value_currency: Optional[str] = None
+    expected_close_date: Optional[str] = None
+    technical_status: Optional[str] = None
+    reonic_project_id: Optional[str] = None
 
 
 class ReonicActivityPayload(BaseModel):
     subject: str
     type: str = "task"
-    deal_id: int | None = None
-    person_id: int | None = None
-    org_id: int | None = None
-    due_date: str | None = None
-    due_time: str | None = None
-    duration: str | None = None
-    note: str | None = None
-    reonic_project_id: str | None = None
+    deal_id: Optional[int] = None
+    person_id: Optional[int] = None
+    org_id: Optional[int] = None
+    due_date: Optional[str] = None
+    due_time: Optional[str] = None
+    duration: Optional[str] = None
+    note: Optional[str] = None
+    reonic_project_id: Optional[str] = None
 
 
 class ReonicProjectUpdate(BaseModel):
     deal_id: int
     technical_status: str
-    expected_go_live: str | None = None
-    progress_note: str | None = None
-    reonic_project_id: str | None = None
-    stage_id: int | None = None
-    value_amount: float | None = None
-    value_currency: str | None = None
-    owner_id: int | None = None
+    expected_go_live: Optional[str] = None
+    progress_note: Optional[str] = None
+    reonic_project_id: Optional[str] = None
+    stage_id: Optional[int] = None
+    value_amount: Optional[float] = None
+    value_currency: Optional[str] = None
+    owner_id: Optional[int] = None
 
 class ReonicDealUpsert(BaseModel):
     reonic_project_id: str
-    title: str | None = None
-    technical_status: str | None = None
-    stage_id: int | None = None
-    value_amount: float | None = None
-    value_currency: str | None = None
-    owner_id: int | None = None
-    person_id: int | None = None
-    org_id: int | None = None
-    expected_close_date: str | None = None
+    title: Optional[str] = None
+    technical_status: Optional[str] = None
+    stage_id: Optional[int] = None
+    value_amount: Optional[float] = None
+    value_currency: Optional[str] = None
+    owner_id: Optional[int] = None
+    person_id: Optional[int] = None
+    org_id: Optional[int] = None
+    expected_close_date: Optional[str] = None
 
 # 1) Reonic → Pipedrive: Update Deal Status
 @router.post("/reonic_push_status_to_pipedrive")

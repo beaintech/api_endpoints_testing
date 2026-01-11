@@ -1,6 +1,7 @@
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
+from typing import Optional, List
 from pipedrive_config import (
     PIPEDRIVE_API_TOKEN,
     PIPEDRIVE_BASE_URL,
@@ -10,21 +11,21 @@ from pipedrive_config import (
 router = APIRouter()
 
 class ProductPrice(BaseModel):
-    price: float | None = None
-    currency: str | None = None
-    cost: float | None = None
-    overhead_cost: float | None = None
+    price: Optional[float] = None
+    currency: Optional[str] = None
+    cost: Optional[float] = None
+    overhead_cost: Optional[float] = None
 
 class ProductCreate(BaseModel):
     name: str
-    code: str | None = None
-    unit: str | None = None
-    tax: float | None = None
-    active_flag: int | None = None
-    selectable: int | None = None
-    visible_to: str | None = None
-    owner_id: int | None = None
-    prices: list[ProductPrice] | None = None
+    code: Optional[str] = None
+    unit: Optional[str] = None
+    tax: Optional[float] = None
+    active_flag: Optional[int] = None
+    selectable: Optional[int] = None
+    visible_to: Optional[str] = None
+    owner_id: Optional[int] = None
+    prices: Optional[List[ProductPrice]] = None
 
 @router.post("")
 async def add_product(body: ProductCreate):
