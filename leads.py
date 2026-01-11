@@ -2,12 +2,30 @@ from fastapi import APIRouter, HTTPException
 from fastapi.responses import JSONResponse
 from typing import Any, Dict, Optional
 from pydantic import BaseModel
+
 from pipedrive_config import (
     PIPEDRIVE_API_TOKEN,
-    PIPEDRIVE_BASE_URL,
+    PIPEDRIVE_BASE_URL,  # e.g. "https://companydomain.pipedrive.com"
 )
 
 router = APIRouter()
+
+def _pd_v2_url(path: str) -> str:
+    base = (PIPEDRIVE_BASE_URL or "").rstrip("/")
+    path = path if path.startswith("/") else f"/{path}"
+    return f"{base}/api/v2{path}"
+
+def _pd_headers() -> Dict[str, str]:
+    if not PIPEDRIVE_API_TOKEN:
+        raise HTTPException(status_code=400, detail="Missing Pipedrive token")
+    return {"x-api-token": PIPEDRIVE_API_TOKEN}
+
+def _redacted_headers(headers: Dict[str, str]) -> Dict[str, str]:
+    out = dict(headers)
+    if "x-api-token" in out:
+        out["x-api-token"] = "[REDACTED]"
+    return out
+
 
 class LeadCreate(BaseModel):
     title: str
@@ -21,6 +39,7 @@ class LeadCreate(BaseModel):
     visible_to: Optional[str] = None
     was_seen: Optional[bool] = None
 
+
 class LeadUpdate(BaseModel):
     title: Optional[str] = None
     amount: Optional[float] = None
@@ -33,19 +52,16 @@ class LeadUpdate(BaseModel):
     visible_to: Optional[str] = None
     was_seen: Optional[bool] = None
 
-# 1) GET /get_leads – fetch leads from Pipedrive
+
+# 1) GET /get_leads – fetch leads from Pipedrive (Mock, v2)
 @router.get("")
 async def get_leads():
     """
-    Fetch leads from Pipedrive using api_token authentication (mocked).
-    GET https://{COMPANYDOMAIN}.pipedrive.com/v1/leads?api_token=APITOKEN
+    Mocked: GET /api/v2/leads
+    Auth: x-api-token header
     """
-
-    if not PIPEDRIVE_API_TOKEN:
-        raise HTTPException(status_code=400, detail="PIPEDRIVE_API_TOKEN is not set.")
-
-    url = f"{PIPEDRIVE_BASE_URL}/leads"
-    params = {"api_token": PIPEDRIVE_API_TOKEN}
+    headers = _pd_headers()
+    url = _pd_v2_url("/leads")
 
     class MockResponse:
         def __init__(self, payload, status_code=200):
@@ -57,9 +73,14 @@ async def get_leads():
 
     mock_payload = {
         "success": True,
+        "request": {
+            "method": "GET",
+            "endpoint": url,
+            "headers": _redacted_headers(headers),
+        },
         "data": [
             {
-                "id": 101,
+                "id": "55ebb4c0-536e-11ea-87d0-d1171b17f6a0",
                 "title": "Mock Lead A",
                 "value": {"amount": 3000, "currency": "EUR"},
                 "owner_id": 1,
@@ -68,19 +89,15 @@ async def get_leads():
                 "add_time": "2025-01-01 10:00:00",
             },
             {
-                "id": 102,
+                "id": "9e7c8d4b-2222-4b9c-8d8b-bbbbbbbbbbbb",
                 "title": "Mock Lead B",
                 "value": {"amount": 5000, "currency": "USD"},
                 "owner_id": 2,
                 "person_id": 11,
                 "organization_id": 101,
                 "add_time": "2025-01-02 15:30:00",
-            }
+            },
         ],
-        "mock_info": {
-            "would_have_called_url": url,
-            "would_have_sent_params": params,
-        },
     }
 
     resp = MockResponse(mock_payload, status_code=200)
@@ -96,20 +113,19 @@ async def get_leads():
             detail=data.get("error") or data.get("message") or "Pipedrive error",
         )
 
-    return JSONResponse(content=data)
+    return JSONResponse(content=data, status_code=resp.status_code)
 
-# GET /get_lead/{lead_id} – fetch a single lead
+
+# GET /get_lead/{lead_id} – fetch a single lead (Mock, v2)
 @router.get("/{lead_id}")
-async def get_lead(lead_id: int):
+async def get_lead(lead_id: str):
     """
-    Fetch a single lead from Pipedrive by ID (mocked).
-    GET https://{COMPANYDOMAIN}.pipedrive.com/v1/leads/{id}?api_token=APITOKEN
+    Mocked: GET /api/v2/leads/{id}
+    lead_id: uuid string
+    Auth: x-api-token header
     """
-    if not PIPEDRIVE_API_TOKEN:
-        raise HTTPException(status_code=400, detail="PIPEDRIVE_API_TOKEN is not set.")
-
-    url = f"{PIPEDRIVE_BASE_URL}/leads/{lead_id}"
-    params = {"api_token": PIPEDRIVE_API_TOKEN}
+    headers = _pd_headers()
+    url = _pd_v2_url(f"/leads/{lead_id}")
 
     class MockResponse:
         def __init__(self, payload, status_code=200):
@@ -124,7 +140,7 @@ async def get_lead(lead_id: int):
         "request": {
             "method": "GET",
             "endpoint": url,
-            "query_params": params,
+            "headers": _redacted_headers(headers),
         },
         "data": {
             "id": lead_id,
@@ -152,32 +168,22 @@ async def get_lead(lead_id: int):
 
     return JSONResponse(content=data, status_code=resp.status_code)
 
-# 2) POST /create_lead – create a lead in Pipedrive
+
+# 2) POST /create_lead – create a lead (Mock, v2)
 @router.post("")
 async def create_lead(body: LeadCreate):
     """
-    Create a Pipedrive Lead using official Pipedrive fields (mocked).
-
-    Real-world behavior:
-      POST https://{COMPANYDOMAIN}.pipedrive.com/v1/leads?api_token=APITOKEN
-
-    This version:
-      - keeps url, params, payload structure exactly like production
-      - uses a local MockResponse instead of a real HTTP call
-      - keeps try/except and status_code checks
+    Mocked: POST /api/v2/leads
+    Auth: x-api-token header
     """
-
-    if not PIPEDRIVE_API_TOKEN:
-        raise HTTPException(status_code=400, detail="PIPEDRIVE_API_TOKEN is not set.")
-
-    url = f"{PIPEDRIVE_BASE_URL}/leads"
-    params = {"api_token": PIPEDRIVE_API_TOKEN}
+    headers = _pd_headers()
+    url = _pd_v2_url("/leads")
 
     payload = {
         "title": body.title,
         "value": {
             "amount": body.amount,
-            "currency": body.currency
+            "currency": body.currency,
         } if body.amount is not None and body.currency is not None else None,
         "owner_id": body.owner_id,
         "label_ids": body.label_ids,
@@ -185,7 +191,7 @@ async def create_lead(body: LeadCreate):
         "organization_id": body.organization_id,
         "expected_close_date": body.expected_close_date,
         "visible_to": body.visible_to,
-        "was_seen": body.was_seen
+        "was_seen": body.was_seen,
     }
     payload = {k: v for k, v in payload.items() if v is not None}
 
@@ -202,11 +208,11 @@ async def create_lead(body: LeadCreate):
         "request": {
             "method": "POST",
             "endpoint": url,
-            "query_params": params,
+            "headers": _redacted_headers(headers),
             "json_body": payload,
         },
         "data": {
-            "id": 999,
+            "id": "8d6b7c3a-1111-4a9b-9c9a-aaaaaaaaaaaa",
             "title": payload.get("title"),
             "value": payload.get("value"),
             "owner_id": payload.get("owner_id"),
@@ -217,8 +223,8 @@ async def create_lead(body: LeadCreate):
             "visible_to": payload.get("visible_to"),
             "was_seen": payload.get("was_seen"),
             "status": "new",
-            "created_from": "python-mock-demo"
-        }
+            "created_from": "python-mock-demo-v2",
+        },
     }
 
     resp = MockResponse(mock_body, status_code=201)
@@ -236,20 +242,16 @@ async def create_lead(body: LeadCreate):
 
     return JSONResponse(content=data, status_code=resp.status_code)
 
-# PATCH /leads/{lead_id} – update a lead
+
+# PATCH /leads/{lead_id} – update a lead (Mock, v2)
 @router.patch("/{lead_id}")
-async def update_lead(lead_id: int, body: LeadUpdate):
+async def update_lead(lead_id: str, body: LeadUpdate):
     """
-    Update an existing lead in Pipedrive (mocked).
-
-    Real-world:
-      PATCH https://{COMPANYDOMAIN}.pipedrive.com/v1/leads/{id}?api_token=APITOKEN
+    Mocked: PATCH /api/v2/leads/{id}
+    Auth: x-api-token header
     """
-    if not PIPEDRIVE_API_TOKEN:
-        raise HTTPException(status_code=400, detail="PIPEDRIVE_API_TOKEN is not set.")
-
-    url = f"{PIPEDRIVE_BASE_URL}/leads/{lead_id}"
-    params = {"api_token": PIPEDRIVE_API_TOKEN}
+    headers = _pd_headers()
+    url = _pd_v2_url(f"/leads/{lead_id}")
 
     payload: Dict[str, Any] = {}
 
@@ -294,14 +296,14 @@ async def update_lead(lead_id: int, body: LeadUpdate):
         "request": {
             "method": "PATCH",
             "endpoint": url,
-            "query_params": params,
+            "headers": _redacted_headers(headers),
             "json_body": payload,
         },
         "data": {
             "id": lead_id,
             **payload,
-            "updated_from": "python-mock-demo"
-        }
+            "updated_from": "python-mock-demo-v2",
+        },
     }
 
     resp = MockResponse(mock_body, status_code=200)
@@ -319,20 +321,16 @@ async def update_lead(lead_id: int, body: LeadUpdate):
 
     return JSONResponse(content=data, status_code=resp.status_code)
 
-# DELETE /leads/{lead_id} – delete a lead
+
+# DELETE /leads/{lead_id} – delete a lead (Mock, v2)
 @router.delete("/{lead_id}")
-async def delete_lead(lead_id: int):
+async def delete_lead(lead_id: str):
     """
-    Delete a lead in Pipedrive by ID (mocked).
-
-    Real-world:
-      DELETE https://{COMPANYDOMAIN}.pipedrive.com/v1/leads/{id}?api_token=APITOKEN
+    Mocked: DELETE /api/v2/leads/{id}
+    Auth: x-api-token header
     """
-    if not PIPEDRIVE_API_TOKEN:
-        raise HTTPException(status_code=400, detail="PIPEDRIVE_API_TOKEN is not set.")
-
-    url = f"{PIPEDRIVE_BASE_URL}/leads/{lead_id}"
-    params = {"api_token": PIPEDRIVE_API_TOKEN}
+    headers = _pd_headers()
+    url = _pd_v2_url(f"/leads/{lead_id}")
 
     class MockResponse:
         def __init__(self, payload, status_code=200):
@@ -347,7 +345,7 @@ async def delete_lead(lead_id: int):
         "request": {
             "method": "DELETE",
             "endpoint": url,
-            "query_params": params,
+            "headers": _redacted_headers(headers),
         },
         "data": {
             "id": lead_id,
