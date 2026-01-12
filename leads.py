@@ -10,7 +10,21 @@ from pipedrive_config import (
 
 router = APIRouter()
 
+def _pd_v1_url(path: str) -> str:
+    """
+    API v1 base:
+      {BASE}/v1/...
+    """
+    base = (PIPEDRIVE_BASE_URL or "").rstrip("/")
+    path = path if path.startswith("/") else f"/{path}"
+    return f"{base}/v1{path}"
+
 def _pd_v2_url(path: str) -> str:
+    """
+    API v2 base:
+      {BASE}/api/v2/...
+    (Only needed for endpoints that are truly v2, e.g. leads search)
+    """
     base = (PIPEDRIVE_BASE_URL or "").rstrip("/")
     path = path if path.startswith("/") else f"/{path}"
     return f"{base}/api/v2{path}"
@@ -39,7 +53,6 @@ class LeadCreate(BaseModel):
     visible_to: Optional[str] = None
     was_seen: Optional[bool] = None
 
-
 class LeadUpdate(BaseModel):
     title: Optional[str] = None
     amount: Optional[float] = None
@@ -52,16 +65,15 @@ class LeadUpdate(BaseModel):
     visible_to: Optional[str] = None
     was_seen: Optional[bool] = None
 
-
-# 1) GET /get_leads – fetch leads from Pipedrive (Mock, v2)
+# 1) GET /get_leads – fetch leads from Pipedrive (Mock, v1)
 @router.get("")
 async def get_leads():
     """
-    Mocked: GET /api/v2/leads
-    Auth: x-api-token header
+    Mocked: GET /v1/leads
+    Auth: x-api-token header (your demo choice)
     """
     headers = _pd_headers()
-    url = _pd_v2_url("/leads")
+    url = _pd_v1_url("/leads")
 
     class MockResponse:
         def __init__(self, payload, status_code=200):
@@ -115,17 +127,16 @@ async def get_leads():
 
     return JSONResponse(content=data, status_code=resp.status_code)
 
-
-# GET /get_lead/{lead_id} – fetch a single lead (Mock, v2)
+# GET /get_lead/{lead_id} – fetch a single lead (Mock, v1)
 @router.get("/{lead_id}")
 async def get_lead(lead_id: str):
     """
-    Mocked: GET /api/v2/leads/{id}
+    Mocked: GET /v1/leads/{id}
     lead_id: uuid string
-    Auth: x-api-token header
+    Auth: x-api-token header (your demo choice)
     """
     headers = _pd_headers()
-    url = _pd_v2_url(f"/leads/{lead_id}")
+    url = _pd_v1_url(f"/leads/{lead_id}")
 
     class MockResponse:
         def __init__(self, payload, status_code=200):
@@ -168,16 +179,15 @@ async def get_lead(lead_id: str):
 
     return JSONResponse(content=data, status_code=resp.status_code)
 
-
-# 2) POST /create_lead – create a lead (Mock, v2)
+# 2) POST /create_lead – create a lead (Mock, v1)
 @router.post("")
 async def create_lead(body: LeadCreate):
     """
-    Mocked: POST /api/v2/leads
-    Auth: x-api-token header
+    Mocked: POST /v1/leads
+    Auth: x-api-token header (your demo choice)
     """
     headers = _pd_headers()
-    url = _pd_v2_url("/leads")
+    url = _pd_v1_url("/leads")
 
     payload = {
         "title": body.title,
@@ -223,7 +233,7 @@ async def create_lead(body: LeadCreate):
             "visible_to": payload.get("visible_to"),
             "was_seen": payload.get("was_seen"),
             "status": "new",
-            "created_from": "python-mock-demo-v2",
+            "created_from": "python-mock-demo-v1",
         },
     }
 
@@ -242,16 +252,15 @@ async def create_lead(body: LeadCreate):
 
     return JSONResponse(content=data, status_code=resp.status_code)
 
-
-# PATCH /leads/{lead_id} – update a lead (Mock, v2)
+# PATCH /leads/{lead_id} – update a lead (Mock, v1)
 @router.patch("/{lead_id}")
 async def update_lead(lead_id: str, body: LeadUpdate):
     """
-    Mocked: PATCH /api/v2/leads/{id}
-    Auth: x-api-token header
+    Mocked: PATCH /v1/leads/{id}
+    Auth: x-api-token header (your demo choice)
     """
     headers = _pd_headers()
-    url = _pd_v2_url(f"/leads/{lead_id}")
+    url = _pd_v1_url(f"/leads/{lead_id}")
 
     payload: Dict[str, Any] = {}
 
@@ -302,7 +311,7 @@ async def update_lead(lead_id: str, body: LeadUpdate):
         "data": {
             "id": lead_id,
             **payload,
-            "updated_from": "python-mock-demo-v2",
+            "updated_from": "python-mock-demo-v1",
         },
     }
 
@@ -321,16 +330,15 @@ async def update_lead(lead_id: str, body: LeadUpdate):
 
     return JSONResponse(content=data, status_code=resp.status_code)
 
-
-# DELETE /leads/{lead_id} – delete a lead (Mock, v2)
+# DELETE /leads/{lead_id} – delete a lead (Mock, v1)
 @router.delete("/{lead_id}")
 async def delete_lead(lead_id: str):
     """
-    Mocked: DELETE /api/v2/leads/{id}
-    Auth: x-api-token header
+    Mocked: DELETE /v1/leads/{id}
+    Auth: x-api-token header (your demo choice)
     """
     headers = _pd_headers()
-    url = _pd_v2_url(f"/leads/{lead_id}")
+    url = _pd_v1_url(f"/leads/{lead_id}")
 
     class MockResponse:
         def __init__(self, payload, status_code=200):

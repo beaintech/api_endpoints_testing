@@ -12,7 +12,7 @@ If you want the playground to feel “v2-realistic”, keep the ID formats consi
 - `lead_id` (lead `id`) is a **UUID string** (e.g. `6b2f2dd0-5c3e-4f87-9a29-2f70e3f6f1a3`)
 - `person_id` is an **integer**
 - `organization_id` is an **integer**
-- `deaö_id` is an **integer ID**
+- `deal_id` is an **integer ID**
 
 ---
 
@@ -310,7 +310,9 @@ What it simulates:
 
 * Pipedrive v2 leads search: `GET /api/v2/leads/search`
 * Lead IDs are UUID strings in Pipedrive (lead_id is a UUID string).
-* Reonic receiver: `POST {REONIC_API_BASE}/leads/import` (mocked endpoint name)
+* Reonic receiver: POST {REONIC_API_BASE}/integrations/{clientId}/h360/request/create
+* Reonic receiver (example): `POST {REONIC_API_BASE}/rest/v2/clients/{clientId}/contacts` (official-style path)
+* Reonic receiver (example): `POST {REONIC_API_BASE}/rest/v2/clients/{clientId}/h360/offers/notes` (official-style path)
 
 Example request:
 
