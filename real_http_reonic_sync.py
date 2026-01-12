@@ -12,9 +12,7 @@ from pipedrive_config import (
 
 router = APIRouter()
 
-# ----------------------------
 # Models
-# ----------------------------
 class ReonicWebhookEvent(BaseModel):
     event_type: str
     reonic_project_id: str
