@@ -375,3 +375,73 @@ async def delete_lead(lead_id: str):
         )
 
     return JSONResponse(content=data, status_code=resp.status_code)
+
+# Leads search (Mock, v2)
+@router.get("/search")
+async def search_leads(term: str, limit: int = 2):
+    """
+    Mocked: GET /api/v2/leads/search?term=...
+    Auth: x-api-token header (your demo choice)
+    Local route suggestion (if router prefix is /leads): GET /leads/search?term=solar
+    """
+    headers = _pd_headers()
+    url = _pd_v2_url("/leads/search")
+
+    class MockResponse:
+        def __init__(self, payload, status_code=200):
+            self._payload = payload
+            self.status_code = status_code
+
+        def json(self):
+            return self._payload
+
+    # mock results - lead_id is UUID string
+    results = [
+        {
+            "id": "55ebb4c0-536e-11ea-87d0-d1171b17f6a0",
+            "title": f"Mock Lead match: {term} A",
+            "value": {"amount": 3000, "currency": "EUR"},
+            "owner_id": 1,
+            "person_id": 10,
+            "organization_id": 100,
+            "add_time": "2025-01-01 10:00:00",
+        },
+        {
+            "id": "9e7c8d4b-2222-4b9c-8d8b-bbbbbbbbbbbb",
+            "title": f"Mock Lead match: {term} B",
+            "value": {"amount": 5000, "currency": "USD"},
+            "owner_id": 2,
+            "person_id": 11,
+            "organization_id": 101,
+            "add_time": "2025-01-02 15:30:00",
+        },
+    ][: max(0, min(limit, 50))]
+
+    mock_payload = {
+        "success": True,
+        "request": {
+            "method": "GET",
+            "endpoint": url,
+            "headers": _redacted_headers(headers),
+            "query": {"term": term, "limit": limit},
+        },
+        "data": {
+            "items": results,
+            "pagination": {"limit": limit, "returned": len(results)},
+        },
+    }
+
+    resp = MockResponse(mock_payload, status_code=200)
+
+    try:
+        data = resp.json()
+    except Exception:
+        raise HTTPException(status_code=500, detail="Invalid JSON from mock Pipedrive")
+
+    if resp.status_code != 200 or not data.get("success", False):
+        raise HTTPException(
+            status_code=resp.status_code,
+            detail=data.get("error") or data.get("message") or "Pipedrive error",
+        )
+
+    return JSONResponse(content=data, status_code=resp.status_code)
