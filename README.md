@@ -12,28 +12,27 @@ If you want the playground to feel “v2-realistic”, keep the ID formats consi
 - `lead_id` (lead `id`) is a **UUID string** (e.g. `6b2f2dd0-5c3e-4f87-9a29-2f70e3f6f1a3`)
 - `person_id` is an **integer**
 - `organization_id` is an **integer**
+- `deaö_id` is an **integer ID**
 
 ---
 
 ## Installation
-
-```bash
 python -m pip install fastapi "uvicorn[standard]" python-dotenv
-````
 
 ---
 
 ## Run Locally
-
-```bash
 uvicorn main:app --reload --port 8000
-```
 
 Server starts at:
 
-```text
 http://localhost:8000
-```
+
+---
+
+### Swagger UI
+
+[http://localhost:8000/docs](http://localhost:8000/docs)
 
 ---
 
@@ -94,27 +93,6 @@ POST   /organizations
 GET    /lookup_deal_id_by_reonic_project/{reonic_project_id}
 POST   /upsert_deal_by_reonic_project_id
 
-### Swagger UI
-
-[http://localhost:8000/docs](http://localhost:8000/docs)
-
----
-
-## About ID Types (Important)
-
-In Pipedrive:
-
-* `lead_id` is a UUID string. If you want your local fixtures to mirror Pipedrive, do NOT use numeric IDs like `101` for leads.
-* `person_id` is an integer.
-* `organization_id` is an integer.
-
-So in this README we will use example lead IDs like:
-
-`6b2f2dd0-5c3e-4f87-9a29-2f70e3f6f1a3`
-
-If your local mock fixtures still use numeric IDs internally, you can keep them for now, but the “v2-realistic” version should migrate them to UUID strings.
-
----
 
 ## POST Examples (Leads)
 
@@ -122,7 +100,6 @@ If your local mock fixtures still use numeric IDs internally, you can keep them 
 
 POST → `/leads` → “Try it out” → paste:
 
-```json
 {
   "title": "Lead 158",
   "value": { "amount": 3000, "currency": "USD" },
@@ -134,7 +111,6 @@ POST → `/leads` → “Try it out” → paste:
   "visible_to": "1",
   "was_seen": true
 }
-```
 
 Notes:
 
@@ -223,7 +199,6 @@ Reonic does **not** create Leads, but it can push updates to existing CRM Deals 
 
 These endpoints simulate project → CRM sync flows (LOCAL playground endpoints):
 
-````md
 ### 1) POST `/reonic_push_status_to_pipedrive`
 
 Use when a Reonic status change should update an existing Pipedrive deal.
@@ -251,7 +226,6 @@ curl -X POST "http://127.0.0.1:8000/reonic_push_status_to_pipedrive" \
     "technical_status": "READY_FOR_INSTALL",
     "reonic_project_id": "reonic_proj_demo_001"
   }'
-````
 
 What you get back:
 
@@ -272,7 +246,6 @@ What it simulates:
 
 Example request:
 
-```bash
 curl -X POST "http://127.0.0.1:8000/reonic_push_activity_to_pipedrive" \
   -H "Content-Type: application/json" \
   -d '{
@@ -283,7 +256,6 @@ curl -X POST "http://127.0.0.1:8000/reonic_push_activity_to_pipedrive" \
     "note": "Customer asked for afternoon appointment.",
     "reonic_project_id": "reonic_proj_demo_001"
   }'
-```
 
 Design choice:
 
@@ -442,11 +414,7 @@ Run it a second time with the same `reonic_project_id`:
 * Mapping is in-memory. Restarting the server resets mappings.
 * `x-api-token` is always redacted in the returned request preview.
 * `deal_id` is integer; `lead_id` is UUID string.
-* Reonic endpoints like `/leads/import` are placeholders for your demo receiver side.
 
-```
-::contentReference[oaicite:2]{index=2}
-```
 ---
 
 # Product Endpoints
