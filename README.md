@@ -1,105 +1,142 @@
+Plan: I’ll keep your content and mock examples, and only rewrite the README to be consistent (leads v1 CRUD + v2 search), remove confusing receiver examples, and fix the POST/GET ambiguity—no extra features.
+
+
+````markdown
 # Pipedrive Local Playground (FastAPI)
 
 A fully local sandbox for simulating Pipedrive API calls using mocked data.  
 This playground is designed for demonstrating how Pipedrive <-> Reonic integrations work **without requiring real credentials**.
 
-To connect it to a real Pipedrive account, you mainly switch the mocked calls to real HTTP calls and align URLs per endpoint:
-- Many core entities exist in v2 under `/api/v2/...` (e.g. deals/products/organizations and leads search).
-- Leads search exists in v2: `GET /api/v2/leads/search`.
-- Lead create/update in the official docs are still shown as v1 endpoints (`POST /v1/leads`, `PATCH /v1/leads/{id}`), so do not assume “everything is /api/v2” for leads CRUD.
+## How “real HTTP” would look later (v1 vs v2, only when you switch to real calls)
 
-If you want the playground to feel “v2-realistic”, keep the ID formats consistent with Pipedrive:
+When you eventually replace mocks with real HTTP calls, **don’t assume everything is `/api/v2`**.
+
+- Many core entities are v2 under `/api/v2/...` (e.g. deals/products/organizations, activities).
+- **Leads search is v2**: `GET /api/v2/leads/search`
+- **Leads CRUD is v1** (create/read/update/delete):  
+  `GET /v1/leads/{id}`  
+  `POST /v1/leads`  
+  `PATCH /v1/leads/{id}`  
+  `DELETE /v1/leads/{id}`
+
+If you want the playground to feel “realistic”, keep ID formats consistent with Pipedrive:
 - `lead_id` (lead `id`) is a **UUID string** (e.g. `6b2f2dd0-5c3e-4f87-9a29-2f70e3f6f1a3`)
 - `person_id` is an **integer**
 - `organization_id` is an **integer**
-- `deal_id` is an **integer ID**
+- `deal_id` is an **integer**
 
 ---
 
 ## Installation
+
+```bash
 python -m pip install fastapi "uvicorn[standard]" python-dotenv
+````
 
 ---
 
 ## Run Locally
+
+```bash
 uvicorn main:app --reload --port 8000
+```
 
 Server starts at:
 
+```text
 http://localhost:8000
+```
 
----
+Swagger UI:
 
-### Swagger UI
-
-[http://localhost:8000/docs](http://localhost:8000/docs)
+```text
+http://localhost:8000/docs
+```
 
 ---
 
 ## Endpoint Rename Cheatsheet (Local Playground)
 
-These are your LOCAL FastAPI routes (mock playground), not official Pipedrive routes:
+These are your **LOCAL FastAPI routes** (mock playground), not official Pipedrive routes.
 
-/get_leads → /leads
-/get_lead/{id} → /leads/{id}
-/create_lead → /leads
-/update_lead/{id} → /leads/{id}
-/delete_lead/{id} → /leads/{id}
+If you previously had legacy names like `/get_leads`, treat them as old aliases. The **current canonical local routes** are on the right:
 
-/sync_leads → /sync/pipedrive-to-reonic/leads
-/sync_reonic_to_pipedrive → /sync/reonic-to-pipedrive/projects
-/sync_reonic_products → /sync/reonic-to-pipedrive/products
+```text
+/get_leads           -> /leads
+/get_lead/{id}       -> /leads/{id}
+/create_lead         -> /leads
+/update_lead/{id}    -> /leads/{id}
+/delete_lead/{id}    -> /leads/{id}
 
-/add_product → /products
-/add_organization → /organizations
+(sync / push)
+ /sync_leads                      -> /sync/pipedrive-to-reonic/leads
+ /sync_reonic_to_pipedrive        -> /sync/reonic-to-pipedrive/projects
+ /sync_reonic_products            -> /sync/reonic-to-pipedrive/products
 
-/reonic_push_status_to_pipedrive → /reonic_push_status_to_pipedrive
-/reonic_push_activity_to_pipedrive → /reonic_push_activity_to_pipedrive
-/reonic_push_project_update → /reonic_push_project_update
+(products / orgs)
+ /add_product                     -> /products
+ /add_organization                -> /organizations
 
-/reonic_webhook_project_event → /reonic_webhook_project_event
-/lookup_deal_id_by_reonic_project/{reonic_project_id} → /lookup_deal_id_by_reonic_project/{reonic_project_id}
-/upsert_deal_by_reonic_project_id → /upsert_deal_by_reonic_project_id
+(reonic -> pipedrive)
+ /reonic_push_status_to_pipedrive -> /reonic_push_status_to_pipedrive
+ /reonic_push_activity_to_pipedrive -> /reonic_push_activity_to_pipedrive
+ /reonic_push_project_update      -> /reonic_push_project_update
+
+(webhook / mapping helpers)
+ /reonic_webhook_project_event    -> /reonic_webhook_project_event
+ /lookup_deal_id_by_reonic_project/{reonic_project_id} -> /lookup_deal_id_by_reonic_project/{reonic_project_id}
+ /upsert_deal_by_reonic_project_id -> /upsert_deal_by_reonic_project_id
+```
 
 ---
 
 ## Test Endpoints
 
-### OAuth Callback Test
+OAuth callback test:
 
-[http://localhost:8000/callback?code=test](http://localhost:8000/callback?code=test)
+```text
+/callback?code=test
+```
 
-### Mock Data Endpoints
+Mock data endpoints:
 
-[http://localhost:8000/mock/pipedrive](http://localhost:8000/mock/pipedrive)
-[http://localhost:8000/mock/saas](http://localhost:8000/mock/saas)
+```text
+/mock/pipedrive
+/mock/saas
+```
 
-### Pipedrive Mock Endpoints (Local)
+---
 
-GET    /leads
-GET    /leads/{lead_id}
-POST   /leads
-PATCH  /leads/{lead_id}
-DELETE /leads/{lead_id}
+## Pipedrive Mock Endpoints (Local)
 
-POST   /sync/pipedrive-to-reonic/leads
-POST   /sync/reonic-to-pipedrive/projects
+```text
+GET     /leads
+GET     /leads/{lead_id}
+POST    /leads
+PATCH   /leads/{lead_id}
+DELETE  /leads/{lead_id}
 
-POST   /products
-POST   /sync/reonic-to-pipedrive/products
+POST    /sync/pipedrive-to-reonic/leads
+POST    /sync/reonic-to-pipedrive/projects
 
-POST   /organizations
+POST    /products
+POST    /sync/reonic-to-pipedrive/products
 
-GET    /lookup_deal_id_by_reonic_project/{reonic_project_id}
-POST   /upsert_deal_by_reonic_project_id
+POST    /organizations
 
+GET     /lookup_deal_id_by_reonic_project/{reonic_project_id}
+POST    /upsert_deal_by_reonic_project_id
+```
 
-## POST Examples (Leads)
+---
 
-### Create a Lead (POST /leads)
+# Leads (Local Mock)
 
-POST → `/leads` → “Try it out” → paste:
+## Create a Lead (POST /leads)
 
+Swagger → `POST /leads` → “Try it out” → paste:
+
+```json
 {
   "title": "Lead 158",
   "value": { "amount": 3000, "currency": "USD" },
@@ -111,11 +148,12 @@ POST → `/leads` → “Try it out” → paste:
   "visible_to": "1",
   "was_seen": true
 }
+```
 
 Notes:
 
 * `person_id` and `organization_id` are integers.
-* Lead value is shown as a single `value` object here to match the official Leads payload shape (`{ "amount": ..., "currency": ... }`).
+* Lead value is shown as a single `value` object to match the common Leads payload shape: `{ "amount": ..., "currency": ... }`.
 
 ---
 
@@ -123,7 +161,9 @@ Notes:
 
 Example URL (UUID lead id):
 
-[http://localhost:8000/leads/6b2f2dd0-5c3e-4f87-9a29-2f70e3f6f1a3](http://localhost:8000/leads/6b2f2dd0-5c3e-4f87-9a29-2f70e3f6f1a3)
+```text
+/leads/6b2f2dd0-5c3e-4f87-9a29-2f70e3f6f1a3
+```
 
 Example body:
 
@@ -142,7 +182,9 @@ All fields are optional.
 
 Example URL:
 
-[http://localhost:8000/leads/6b2f2dd0-5c3e-4f87-9a29-2f70e3f6f1a3](http://localhost:8000/leads/6b2f2dd0-5c3e-4f87-9a29-2f70e3f6f1a3)
+```text
+/leads/6b2f2dd0-5c3e-4f87-9a29-2f70e3f6f1a3
+```
 
 Returns:
 
@@ -159,47 +201,53 @@ Returns:
 
 Example URL:
 
-[http://localhost:8000/leads/6b2f2dd0-5c3e-4f87-9a29-2f70e3f6f1a3](http://localhost:8000/leads/6b2f2dd0-5c3e-4f87-9a29-2f70e3f6f1a3)
+```text
+/leads/6b2f2dd0-5c3e-4f87-9a29-2f70e3f6f1a3
+```
 
 ---
 
-## Sync Leads (Pipedrive → Reonic)
+# Sync (Pipedrive → Reonic)
 
-Trigger the sync:
+## Sync Leads (Local)
 
-[http://localhost:8000/sync/pipedrive-to-reonic/leads](http://localhost:8000/sync/pipedrive-to-reonic/leads)
+This endpoint is **POST** and does **not** require a request body.
 
-This endpoint does **not** require a request body.
+```bash
+curl -X POST "http://127.0.0.1:8000/sync/pipedrive-to-reonic/leads"
+```
 
----
-
-## Sync Projects (Reonic → Pipedrive)
-
-Trigger the reverse sync:
-
-[http://localhost:8000/sync/reonic-to-pipedrive/projects](http://localhost:8000/sync/reonic-to-pipedrive/projects)
-
-This fetches mocked Reonic projects, transforms them, and shows the POST payloads that would be sent to the next step (your mock CRM layer).
+It returns mocked leads, transforms them, and shows the payload that would be sent to the next step.
 
 ---
 
-## Sync Products (Reonic → Pipedrive)
+# Sync (Reonic → Pipedrive)
 
-Trigger the product sync:
+## Sync Projects (Local)
 
-[http://localhost:8000/sync/reonic-to-pipedrive/products](http://localhost:8000/sync/reonic-to-pipedrive/products)
+```bash
+curl -X POST "http://127.0.0.1:8000/sync/reonic-to-pipedrive/projects"
+```
 
-It loads a mocked catalog from Reonic, converts them to Pipedrive product JSON, and returns the mocked POST bodies.
+This fetches mocked Reonic projects, transforms them, and returns the mocked request previews that would be sent downstream.
+
+---
+
+## Sync Products (Local)
+
+```bash
+curl -X POST "http://127.0.0.1:8000/sync/reonic-to-pipedrive/products"
+```
+
+It loads a mocked catalog from Reonic, converts it to Pipedrive product JSON, and returns the mocked POST bodies.
 
 ---
 
 # Reonic → Pipedrive (Deals & Activities)
 
-Reonic does **not** create Leads, but it can push updates to existing CRM Deals and Activities.
+Reonic does **not** create Pipedrive Leads. This section focuses on updating Deals / creating Activities.
 
-These endpoints simulate project → CRM sync flows (LOCAL playground endpoints):
-
-### 1) POST `/reonic_push_status_to_pipedrive`
+## 1) POST `/reonic_push_status_to_pipedrive`
 
 Use when a Reonic status change should update an existing Pipedrive deal.
 
@@ -226,17 +274,11 @@ curl -X POST "http://127.0.0.1:8000/reonic_push_status_to_pipedrive" \
     "technical_status": "READY_FOR_INSTALL",
     "reonic_project_id": "reonic_proj_demo_001"
   }'
-
-What you get back:
-
-* `request.endpoint` shows the v2-style URL that would be called
-* `request.headers` shows `x-api-token` but redacted
-* `request.json_body` is the payload you would send
-* `data` mirrors the updated deal shape in mock form
+```
 
 ---
 
-### 2) POST `/reonic_push_activity_to_pipedrive`
+## 2) POST `/reonic_push_activity_to_pipedrive`
 
 Use when Reonic needs to create a task/log entry in Pipedrive, optionally linked to a deal/person/org.
 
@@ -246,6 +288,7 @@ What it simulates:
 
 Example request:
 
+```bash
 curl -X POST "http://127.0.0.1:8000/reonic_push_activity_to_pipedrive" \
   -H "Content-Type: application/json" \
   -d '{
@@ -256,6 +299,7 @@ curl -X POST "http://127.0.0.1:8000/reonic_push_activity_to_pipedrive" \
     "note": "Customer asked for afternoon appointment.",
     "reonic_project_id": "reonic_proj_demo_001"
   }'
+```
 
 Design choice:
 
@@ -263,7 +307,7 @@ Design choice:
 
 ---
 
-### 3) POST `/reonic_push_project_update`
+## 3) POST `/reonic_push_project_update`
 
 Use when a single Reonic “project update event” should produce two effects in Pipedrive:
 
@@ -277,6 +321,7 @@ What it simulates:
 
 Example request:
 
+```bash
 curl -X POST "http://127.0.0.1:8000/reonic_push_project_update" \
   -H "Content-Type: application/json" \
   -d '{
@@ -290,6 +335,7 @@ curl -X POST "http://127.0.0.1:8000/reonic_push_project_update" \
     "value_currency": "EUR",
     "owner_id": 1
   }'
+```
 
 Response structure:
 
@@ -298,21 +344,22 @@ Response structure:
 
 ---
 
-### 4) POST `/pipedrive_push_leads_to_reonic`
+## 4) POST `/pipedrive_push_leads_to_reonic`
 
 Use when you want to demonstrate the reverse direction:
 
-* Read leads from Pipedrive
+* Read leads from Pipedrive (search)
 * Transform them
-* Push them into a Reonic “import endpoint” (mock)
+* Push them into a Reonic “receiver endpoint” (mock placeholder)
 
 What it simulates:
 
-* Pipedrive v2 leads search: `GET /api/v2/leads/search`
-* Lead IDs are UUID strings in Pipedrive (lead_id is a UUID string).
-* Reonic receiver: POST {REONIC_API_BASE}/integrations/{clientId}/h360/request/create
-* Reonic receiver (example): `POST {REONIC_API_BASE}/rest/v2/clients/{clientId}/contacts` (official-style path)
-* Reonic receiver (example): `POST {REONIC_API_BASE}/rest/v2/clients/{clientId}/h360/offers/notes` (official-style path)
+* Pipedrive leads search: `GET /api/v2/leads/search`
+* Lead IDs are UUID strings in Pipedrive.
+
+Reonic receiver (mock placeholder):
+
+* `POST {REONIC_API_BASE}/{REONIC_IMPORT_PATH}`
 
 Example request:
 
@@ -322,15 +369,15 @@ curl -X POST "http://127.0.0.1:8000/pipedrive_push_leads_to_reonic?term=solar"
 
 What happens in mock:
 
-* It returns two example leads as if they were found by search
-* It transforms them to your simplified Reonic import schema:
+* Returns example leads as if found by search
+* Transforms them to a simplified Reonic import schema:
 
   * `external_id`, `title`, `source`, `person_id`, `owner_id`, `add_time`
-* It returns a mocked “Reonic import response” with `imported: N`
+* Returns a mocked “Reonic import response” with `imported: N`
 
 ---
 
-### 5) POST `/reonic_webhook_project_event`
+## 5) POST `/reonic_webhook_project_event`
 
 Use as the demo “entry point” for events coming from Reonic into your integration service.
 
@@ -341,8 +388,8 @@ What it represents:
 
 What it does in mock:
 
-* It does not call any downstream endpoint.
-* It only returns `actions_planned` describing what it would call next.
+* Does not call any downstream endpoint.
+* Only returns `actions_planned` describing what it would call next.
 
 Example request:
 
@@ -359,10 +406,10 @@ curl -X POST "http://127.0.0.1:8000/reonic_webhook_project_event" \
 
 ---
 
-### 6) GET `/lookup_deal_id_by_reonic_project/{reonic_project_id}`
+## 6) GET `/lookup_deal_id_by_reonic_project/{reonic_project_id}`
 
 Use to show “where deal_id comes from”.
-This answers: given a Reonic project id, which Pipedrive deal id is linked?
+Given a Reonic project id, which Pipedrive deal id is linked?
 
 What it uses:
 
@@ -376,9 +423,9 @@ curl "http://127.0.0.1:8000/lookup_deal_id_by_reonic_project/reonic_proj_demo_00
 
 ---
 
-### 7) POST `/upsert_deal_by_reonic_project_id`
+## 7) POST `/upsert_deal_by_reonic_project_id`
 
-Use when you want an idempotent sync behavior:
+Idempotent sync behavior:
 
 * if mapping exists → update that deal
 * if mapping not found → create a deal and store mapping
@@ -388,7 +435,7 @@ What it simulates:
 * Update path: `PATCH /api/v2/deals/{deal_id}`
 * Create path: `POST /api/v2/deals`
 
-Example request (create if not exists):
+Example request:
 
 ```bash
 curl -X POST "http://127.0.0.1:8000/upsert_deal_by_reonic_project_id" \
@@ -404,9 +451,7 @@ curl -X POST "http://127.0.0.1:8000/upsert_deal_by_reonic_project_id" \
   }'
 ```
 
-Run it a second time with the same `reonic_project_id`:
-
-* It will go through the update path because the mapping was stored in memory.
+---
 
 ## Notes and limitations
 
@@ -420,10 +465,6 @@ Run it a second time with the same `reonic_project_id`:
 # Product Endpoints
 
 ## Add a Product (POST /products)
-
-[http://localhost:8000/products](http://localhost:8000/products)
-
-You can send the full Pipedrive-style JSON body, including price entries.
 
 Example JSON:
 
@@ -454,8 +495,6 @@ Example JSON:
 
 ## Add an Organization (POST /organizations)
 
-[http://localhost:8000/organizations](http://localhost:8000/organizations)
-
 Minimal example JSON:
 
 ```json
@@ -477,16 +516,9 @@ Optional fields example:
 
 ---
 
-## Notes
+## Reference (official docs)
 
-* All responses are fully mocked – no real requests are sent to Pipedrive.
-* URLs and payload shapes aim to mirror Pipedrive behavior (especially ID formats).
-* Safe for demos, onboarding, teaching API flows, and integration planning.
-
+```text
+Leads v1: https://developers.pipedrive.com/docs/api/v1/Leads
+Organizations: https://developers.pipedrive.com/docs/api/v1/Organizations
 ```
-
-::contentReference[oaicite:4]{index=4}
-```
-
-[1]: https://developers.pipedrive.com/docs/api/v1/Leads "Pipedrive API v1 Dev References (Leads) - View Lead API Get, Post & More - Learn - Test - Try Now"
-[2]: https://developers.pipedrive.com/docs/api/v1/Organizations "Pipedrive API v1–v2 Dev References (Organizations) - Learn - Test - Try Now"
