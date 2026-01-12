@@ -277,7 +277,6 @@ What it simulates:
 
 Example request:
 
-```bash
 curl -X POST "http://127.0.0.1:8000/reonic_push_project_update" \
   -H "Content-Type: application/json" \
   -d '{
@@ -291,7 +290,6 @@ curl -X POST "http://127.0.0.1:8000/reonic_push_project_update" \
     "value_currency": "EUR",
     "owner_id": 1
   }'
-```
 
 Response structure:
 
@@ -300,33 +298,28 @@ Response structure:
 
 ---
 
-### 4) POST `/pipedrive_push_leads_to_reonic`
+4) GET /api/v2/leads/search
 
-Use when you want to demonstrate the reverse direction:
-
-* read leads from Pipedrive
-* transform them
-* push them into a Reonic “import endpoint” (mock)
+Use when you want to demonstrate the Search API for leads.
 
 What it simulates:
 
-* Pipedrive v2 leads search: `GET /api/v2/leads/search`
-* Lead IDs are UUID strings in Pipedrive (lead_id is a uuid string).
-* Reonic receiver: `POST {REONIC_API_BASE}/leads/import` (mocked endpoint name)
+Pipedrive Search API endpoint: GET /leads/search (v2 base: /api/v2/leads/search).
+
+Type notes:
+
+Lead IDs are strings (UUID).
 
 Example request:
 
-```bash
-curl -X POST "http://127.0.0.1:8000/pipedrive_push_leads_to_reonic?term=solar"
-```
+curl "http://127.0.0.1:8000/api/v2/leads/search?term=solar&fields=title,notes"
+
 
 What happens in mock:
 
-* It returns two example leads as if they were found by search
-* It transforms them to your simplified Reonic import schema:
+It returns example leads as if they were found by search
 
-  * `external_id`, `title`, `source`, `person_id`, `owner_id`, `add_time`
-* It returns a mocked “Reonic import response” with `imported: N`
+Each lead id is a UUI D string          
 
 ---
 
