@@ -1,7 +1,3 @@
-Plan: I’ll keep your content and mock examples, and only rewrite the README to be consistent (leads v1 CRUD + v2 search), remove confusing receiver examples, and fix the POST/GET ambiguity—no extra features.
-
-
-````markdown
 # Pipedrive Local Playground (FastAPI)
 
 A fully local sandbox for simulating Pipedrive API calls using mocked data.  
@@ -29,29 +25,20 @@ If you want the playground to feel “realistic”, keep ID formats consistent w
 
 ## Installation
 
-```bash
 python -m pip install fastapi "uvicorn[standard]" python-dotenv
-````
 
 ---
 
 ## Run Locally
 
-```bash
 uvicorn main:app --reload --port 8000
-```
 
 Server starts at:
 
-```text
 http://localhost:8000
-```
 
 Swagger UI:
-
-```text
 http://localhost:8000/docs
-```
 
 ---
 
@@ -61,7 +48,6 @@ These are your **LOCAL FastAPI routes** (mock playground), not official Pipedriv
 
 If you previously had legacy names like `/get_leads`, treat them as old aliases. The **current canonical local routes** are on the right:
 
-```text
 /get_leads           -> /leads
 /get_lead/{id}       -> /leads/{id}
 /create_lead         -> /leads
@@ -86,7 +72,6 @@ If you previously had legacy names like `/get_leads`, treat them as old aliases.
  /reonic_webhook_project_event    -> /reonic_webhook_project_event
  /lookup_deal_id_by_reonic_project/{reonic_project_id} -> /lookup_deal_id_by_reonic_project/{reonic_project_id}
  /upsert_deal_by_reonic_project_id -> /upsert_deal_by_reonic_project_id
-```
 
 ---
 
@@ -94,22 +79,17 @@ If you previously had legacy names like `/get_leads`, treat them as old aliases.
 
 OAuth callback test:
 
-```text
 /callback?code=test
-```
 
 Mock data endpoints:
 
-```text
 /mock/pipedrive
 /mock/saas
-```
 
 ---
 
 ## Pipedrive Mock Endpoints (Local)
 
-```text
 GET     /leads
 GET     /leads/{lead_id}
 POST    /leads
@@ -126,7 +106,6 @@ POST    /organizations
 
 GET     /lookup_deal_id_by_reonic_project/{reonic_project_id}
 POST    /upsert_deal_by_reonic_project_id
-```
 
 ---
 
@@ -136,7 +115,6 @@ POST    /upsert_deal_by_reonic_project_id
 
 Swagger → `POST /leads` → “Try it out” → paste:
 
-```json
 {
   "title": "Lead 158",
   "value": { "amount": 3000, "currency": "USD" },
@@ -148,7 +126,6 @@ Swagger → `POST /leads` → “Try it out” → paste:
   "visible_to": "1",
   "was_seen": true
 }
-```
 
 Notes:
 
@@ -161,18 +138,14 @@ Notes:
 
 Example URL (UUID lead id):
 
-```text
 /leads/6b2f2dd0-5c3e-4f87-9a29-2f70e3f6f1a3
-```
 
 Example body:
 
-```json
 {
   "title": "Updated Lead Title",
   "value": { "amount": 5000, "currency": "EUR" }
 }
-```
 
 All fields are optional.
 
@@ -182,18 +155,14 @@ All fields are optional.
 
 Example URL:
 
-```text
 /leads/6b2f2dd0-5c3e-4f87-9a29-2f70e3f6f1a3
-```
 
 Returns:
 
-```json
 {
   "success": true,
   "data": { "id": "6b2f2dd0-5c3e-4f87-9a29-2f70e3f6f1a3", "deleted": true }
 }
-```
 
 ---
 
@@ -201,9 +170,7 @@ Returns:
 
 Example URL:
 
-```text
 /leads/6b2f2dd0-5c3e-4f87-9a29-2f70e3f6f1a3
-```
 
 ---
 
@@ -213,9 +180,7 @@ Example URL:
 
 This endpoint is **POST** and does **not** require a request body.
 
-```bash
-curl -X POST "http://127.0.0.1:8000/sync/pipedrive-to-reonic/leads"
-```
+ POST "http://127.0.0.1:8000/sync/pipedrive-to-reonic/leads"
 
 It returns mocked leads, transforms them, and shows the payload that would be sent to the next step.
 
@@ -225,9 +190,7 @@ It returns mocked leads, transforms them, and shows the payload that would be se
 
 ## Sync Projects (Local)
 
-```bash
-curl -X POST "http://127.0.0.1:8000/sync/reonic-to-pipedrive/projects"
-```
+POST "http://127.0.0.1:8000/sync/reonic-to-pipedrive/projects"
 
 This fetches mocked Reonic projects, transforms them, and returns the mocked request previews that would be sent downstream.
 
@@ -235,9 +198,7 @@ This fetches mocked Reonic projects, transforms them, and returns the mocked req
 
 ## Sync Products (Local)
 
-```bash
-curl -X POST "http://127.0.0.1:8000/sync/reonic-to-pipedrive/products"
-```
+POST "http://127.0.0.1:8000/sync/reonic-to-pipedrive/products"
 
 It loads a mocked catalog from Reonic, converts it to Pipedrive product JSON, and returns the mocked POST bodies.
 
@@ -467,8 +428,6 @@ curl -X POST "http://127.0.0.1:8000/upsert_deal_by_reonic_project_id" \
 ## Add a Product (POST /products)
 
 Example JSON:
-
-```json
 {
   "name": "Test Product",
   "code": "PRD-001",
@@ -487,7 +446,6 @@ Example JSON:
     }
   ]
 }
-```
 
 ---
 
@@ -497,28 +455,22 @@ Example JSON:
 
 Minimal example JSON:
 
-```json
 {
   "name": "Org Inc test"
 }
-```
 
 Optional fields example:
 
-```json
 {
   "name": "Org Inc test",
   "owner_id": 12345,
   "visible_to": "3",
   "address": "Main Street 1, 40210 Düsseldorf"
 }
-```
 
 ---
 
 ## Reference (official docs)
 
-```text
 Leads v1: https://developers.pipedrive.com/docs/api/v1/Leads
 Organizations: https://developers.pipedrive.com/docs/api/v1/Organizations
-```
