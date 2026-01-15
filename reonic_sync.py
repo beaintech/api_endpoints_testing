@@ -1,203 +1,26 @@
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, HTTPException
 from fastapi.responses import JSONResponse
-from typing import Any, Dict, List, Optional
-from pydantic import BaseModel
+from typing import Any, Dict
 from utils.helper import (
-    _pd_v1_url,
-    _pd_v2_url,
-    _pd_headers,
-    _redacted_headers,
+    REONIC_PROJECT_TO_PIPEDRIVE_DEAL
+)
+
+from utils.reonic_sync_types import (
+    ReonicWebhookEvent,
+    ReonicDealStatusUpdate,
+    ReonicActivityPayload,
+    ReonicProjectUpdate,
+    ReonicDealUpsert,
 )
 
 from pipedrive_config import (
     PIPEDRIVE_API_TOKEN,
     PIPEDRIVE_BASE_URL,
-    REONIC_API_BASE,
 )
 
 router = APIRouter()
 
-class ReonicWebhookEvent(BaseModel):
-    event_type: str
-    reonic_project_id: str
-    technical_status: Optional[str] = None
-    deal_id: Optional[int] = None
-
-#  Reonic → Pipedrive Endpoints (Deals + Activities + Project Update)
-class ReonicDealStatusUpdate(BaseModel):
-    deal_id: int
-    stage_id: Optional[int] = None
-    status: Optional[str] = None
-    probability: Optional[int] = None
-    value_amount: Optional[float] = None
-    value_currency: Optional[str] = None
-    expected_close_date: Optional[str] = None # YYYY-MM-DD
-    technical_status: Optional[str] = None
-    reonic_project_id: Optional[str] = None
-
-class ReonicActivityPayload(BaseModel):
-    subject: str
-    type: Optional[str] = "task"
-    deal_id: Optional[int] = None
-    person_id: Optional[int] = None
-    organization_id: Optional[int] = None
-    due_date: Optional[str] = None  # YYYY-MM-DD
-    note: Optional[str] = None
-    reonic_project_id: Optional[str] = None
-
-class ReonicProjectUpdate(BaseModel):
-    deal_id: int
-    technical_status: Optional[str] = None
-    expected_go_live: Optional[str] = None  # YYYY-MM-DD
-    progress_note: Optional[str] = None
-    reonic_project_id: Optional[str] = None
-    stage_id: Optional[int] = None
-    value_amount: Optional[float] = None
-    value_currency: Optional[str] = None
-    owner_id: Optional[int] = None
-
-class ReonicDealUpsert(BaseModel):
-    reonic_project_id: str
-    title: Optional[str] = None
-    technical_status: Optional[str] = None
-    stage_id: Optional[int] = None
-    value_amount: Optional[float] = None
-    value_currency: Optional[str] = None
-    owner_id: Optional[int] = None
-    person_id: Optional[int] = None
-    org_id: Optional[int] = None
-    expected_close_date: Optional[str] = None 
-
-# Data store / mock mapping
-REONIC_PROJECT_TO_PIPEDRIVE_DEAL: Dict[str, int] = {
-    "reonic_proj_demo_001": 5001,
-    "reonic_proj_demo_002": 5002,
-}
-
-def _mock_leads_found(term: str) -> List[Dict[str, Any]]:
-    return [
-        {
-            "id": "6b2f2dd0-5c3e-4f87-9a29-2f70e3f6f1a3",
-            "title": f"{term} Lead A",
-            "value": {"amount": 3000, "currency": "EUR"},
-            "owner_id": 1,
-            "person_id": 10,
-            "organization_id": 100,
-            "add_time": "2025-01-01 10:00:00",
-            "source": "pipedrive",
-        },
-        {
-            "id": "0f3a8d21-1f7b-4a7e-9f77-2df79c0c11aa",
-            "title": f"{term} Lead B",
-            "value": {"amount": 5000, "currency": "USD"},
-            "owner_id": 2,
-            "person_id": 11,
-            "organization_id": 101,
-            "add_time": "2025-01-02 15:30:00",
-            "source": "pipedrive",
-        },
-    ]
-
-def _build_deal_patch_payload(body: ReonicDealStatusUpdate) -> Dict[str, Any]:
-    payload: Dict[str, Any] = {}
-    if body.stage_id is not None:
-        payload["stage_id"] = body.stage_id
-    if body.status is not None:
-        payload["status"] = body.status
-    if body.probability is not None:
-        payload["probability"] = body.probability
-    if body.expected_close_date is not None:
-        payload["expected_close_date"] = body.expected_close_date
-    if body.value_amount is not None or body.value_currency is not None:
-        value: Dict[str, Any] = {}
-        if body.value_amount is not None:
-            value["amount"] = body.value_amount
-        if body.value_currency is not None:
-            value["currency"] = body.value_currency
-        payload["value"] = value
-    if body.technical_status is not None:
-        payload["reonic_technical_status"] = body.technical_status
-    if body.reonic_project_id is not None:
-        payload["reonic_project_id"] = body.reonic_project_id
-    return payload
-
-def _build_activity_create_payload(body: ReonicActivityPayload) -> Dict[str, Any]:
-    payload: Dict[str, Any] = {"subject": body.subject}
-    if body.type is not None:
-        payload["type"] = body.type
-    if body.deal_id is not None:
-        payload["deal_id"] = body.deal_id
-    if body.person_id is not None:
-        payload["person_id"] = body.person_id
-    if body.organization_id is not None:
-        payload["org_id"] = body.organization_id
-    if body.due_date is not None:
-        payload["due_date"] = body.due_date
-
-    note = body.note or ""
-    if body.reonic_project_id:
-        tag = f"[reonic_project_id:{body.reonic_project_id}]"
-        note = (note + "\n" + tag).strip() if note else tag
-    if note:
-        payload["note"] = note
-    return payload
-
-def _transform_found_leads_to_reonic_import(found: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
-    return [
-        {
-            "external_id": lead["id"],
-            "title": lead["title"],
-            "source": "pipedrive",
-            "person_id": lead.get("person_id"),
-            "owner_id": lead.get("owner_id"),
-            "add_time": lead.get("add_time"),
-        }
-        for lead in found
-    ]
-
-# 0) Reonic → Pipedrive: Create Leads
-@router.post("/sync/pipedrive-to-reonic/leads")
-async def sync_leads_pipedrive_to_reonic(
-    term: str = Query("solar"),
-    limit: int = Query(2, ge=1, le=100),
-    cursor: Optional[str] = Query(None),
-    match: str = Query("middle"),
-):
-    headers = _pd_headers()
-    search_url = _pd_v2_url("/leads/search")
-
-    found = _mock_leads_found(term)[:limit]
-    reonic_payload = _transform_found_leads_to_reonic_import(found)
-
-    request_preview = {
-        "pipedrive_search": {
-            "method": "GET",
-            "endpoint": search_url,
-            "headers": _redacted_headers(headers),
-            "query": {"term": term, "limit": limit, "cursor": cursor, "match": match},
-        },
-        "reonic_receiver": {
-            "method": "POST",
-            "endpoint": "{REONIC_API_BASE}/{REONIC_IMPORT_PATH}",
-            "json_body": reonic_payload,
-        },
-    }
-
-    return JSONResponse(
-        content={
-            "success": True,
-            "request": request_preview,
-            "data": {
-                "pipedrive_found": found,
-                "reonic_transformed": reonic_payload,
-                "reonic_mock_response": {"imported": len(reonic_payload)},
-                "next_cursor": "mock_cursor_1" if cursor is None else None,
-            },
-        },
-        status_code=200,
-    )
-
-# 1) Reonic → Pipedrive: Update Deal Status
+# 2) Reonic → Pipedrive: Update Deal Status
 @router.post("/reonic_push_status_to_pipedrive")
 async def reonic_push_status_to_pipedrive(body: ReonicDealStatusUpdate):
     """
@@ -243,7 +66,7 @@ async def reonic_push_status_to_pipedrive(body: ReonicDealStatusUpdate):
     resp = MockResponse(mock_body, status_code=200)
     return JSONResponse(content=resp.json(), status_code=resp.status_code)
 
-# 2) Reonic → Pipedrive: Create Activity
+# 3) Reonic → Pipedrive: Create Activity
 @router.post("/reonic_push_activity_to_pipedrive")
 async def reonic_push_activity_to_pipedrive(body: ReonicActivityPayload):
     """
@@ -287,7 +110,7 @@ async def reonic_push_activity_to_pipedrive(body: ReonicActivityPayload):
     resp = MockResponse(mock_body, status_code=201)
     return JSONResponse(content=resp.json(), status_code=resp.status_code)
 
-# 3) Reonic → Pipedrive: Combined Project Deal + Create Activity
+# 4) Reonic → Pipedrive: Combined Project Deal + Create Activity
 @router.post("/reonic_push_project_update")
 async def reonic_push_project_update(body: ReonicProjectUpdate):
     """
@@ -355,109 +178,6 @@ async def reonic_push_project_update(body: ReonicProjectUpdate):
         status_code=200,
     )
 
-# 4) POST /pipedrive_push_leads_to_reonic – example: Pipedrive → Reonic sync
-@router.post("/pipedrive_push_leads_to_reonic")
-async def pipedrive_push_leads_to_reonic():
-    """
-    Simple example of a sync flow: Pipedrive → Reonic.
-
-    1) Fetch leads from Pipedrive.
-    2) Transform to a simpler structure.
-    3) POST them to a Reonic endpoint: {REONIC_API_BASE}/leads/import
-    """
-    if not PIPEDRIVE_API_TOKEN:
-        raise HTTPException(status_code=400, detail="PIPEDRIVE_API_TOKEN is not set.")
-
-    pipedrive_url = f"{PIPEDRIVE_BASE_URL}/leads"
-    pipedrive_params = {"api_token": PIPEDRIVE_API_TOKEN}
-
-    class MockResponse:
-        def __init__(self, payload, status_code=200):
-            self._payload = payload
-            self.status_code = status_code
-
-        def json(self):
-            return self._payload
-
-    pipedrive_mock_payload = {
-        "success": True,
-        "request": {
-            "method": "GET",
-            "endpoint": pipedrive_url,
-            "query_params": pipedrive_params,
-        },
-        "data": [
-            {
-                "id": 101,
-                "title": "Mock Lead A",
-                "person_id": 10,
-                "owner_id": 1,
-                "add_time": "2025-01-01 10:00:00",
-            },
-            {
-                "id": 102,
-                "title": "Mock Lead B",
-                "person_id": 11,
-                "owner_id": 2,
-                "add_time": "2025-01-02 15:30:00",
-            }
-        ]
-    }
-
-    pd_resp = MockResponse(pipedrive_mock_payload, status_code=200)
-
-    try:
-        leads_data = pd_resp.json()
-    except Exception:
-        raise HTTPException(status_code=500, detail="Invalid JSON from mock Pipedrive")
-
-    if pd_resp.status_code != 200 or not leads_data.get("success", False):
-        raise HTTPException(
-            status_code=pd_resp.status_code,
-            detail=leads_data.get("error") or leads_data.get("message") or "Pipedrive error",
-        )
-
-    raw_leads = leads_data.get("data", [])
-
-    transformed_leads = []
-    for lead in raw_leads:
-        transformed_leads.append(
-            {
-                "external_id": lead.get("id"),
-                "title": lead.get("title"),
-                "source": "pipedrive",
-                "person_id": lead.get("person_id"),
-                "owner_id": lead.get("owner_id"),
-                "add_time": lead.get("add_time"),
-            }
-        )
-
-    reonic_url = f"{REONIC_API_BASE}/leads/import"
-
-    reonic_mock_payload = {
-        "success": True,
-        "request": {
-            "method": "POST",
-            "endpoint": reonic_url,
-            "json_body": {"leads": transformed_leads},
-        },
-        "imported": len(transformed_leads),
-        "system": "reonic-mock",
-        "note": "This is a mock import; no real HTTP request was made.",
-    }
-
-    reonic_status = 200
-    reonic_body = reonic_mock_payload
-
-    return JSONResponse(
-        content={
-            "pipedrive_leads_count": len(raw_leads),
-            "sent_to_reonic_count": len(transformed_leads),
-            "reonic_status_code": reonic_status,
-            "reonic_response": reonic_body,
-        }
-    )
-
 # 5 ) Reonic → This service: project/event webhook (Mock)
 @router.post("/reonic_webhook_project_event")
 async def reonic_webhook_project_event(body: ReonicWebhookEvent):
@@ -493,7 +213,7 @@ async def reonic_webhook_project_event(body: ReonicWebhookEvent):
     )
 
 
-# lookup mapping (reonic_project_id -> pipedrive_deal_id)
+# 6) lookup mapping (reonic_project_id -> pipedrive_deal_id)
 @router.get("/lookup_deal_id_by_reonic_project/{reonic_project_id}")
 async def lookup_deal_id_by_reonic_project(reonic_project_id: str):
     """
@@ -515,7 +235,7 @@ async def lookup_deal_id_by_reonic_project(reonic_project_id: str):
         status_code=200,
     )
 
-# 6 upsert deal by reonic_project_id (lookup -> update or create)
+# 7) upsert deal by reonic_project_id (lookup -> update or create)
 @router.post("/upsert_deal_by_reonic_project_id")
 async def upsert_deal_by_reonic_project_id(body: ReonicDealUpsert):
     """

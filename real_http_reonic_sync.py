@@ -7,7 +7,10 @@ import httpx
 from pipedrive_config import (
     PIPEDRIVE_API_TOKEN,
     PIPEDRIVE_BASE_URL,   # e.g. "https://yourcompany.pipedrive.com"
-    REONIC_API_BASE,      # e.g. "https://reonic.example.com"
+)
+
+from reonic_config import (
+    REONIC_API_BASE,
 )
 
 router = APIRouter()
