@@ -22,3 +22,4 @@ def _redacted_headers(headers: Dict[str, str]) -> Dict[str, str]:
     if "x-api-token" in out:
         out["x-api-token"] = "[REDACTED]"
     return out
+    
