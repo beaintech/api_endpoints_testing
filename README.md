@@ -180,7 +180,7 @@ Example URL:
 
 This endpoint is **POST** and does **not** require a request body.
 
- POST "http://127.0.0.1:8000/sync/pipedrive-to-reonic/leads"
+curl -X POST "http://127.0.0.1:8000/api/sync/pipedrive-to-reonic/leads?term=solar&limit=2"
 
 It returns mocked leads, transforms them, and shows the payload that would be sent to the next step.
 

@@ -5,13 +5,13 @@ from pydantic import BaseModel
 from utils.helper import (
     _pd_v1_url,
     _pd_v2_url,
+    _pd_v1_params,
     _pd_headers,
     _redacted_headers,
     _mock_leads_found,
     _mock_reonic_create_response,
 )
 from pipedrive_config import CF_REONIC_REQUEST_ID_KEY
-
 from reonic_config import (
     _reonic_request_create_url,
     _transform_found_leads_to_reonic_create_requests,
@@ -60,6 +60,7 @@ async def sync_leads_pipedrive_to_reonic(
             {
                 "method": "PATCH",
                 "endpoint": _pd_v1_url(f"/leads/{lead_id}"),
+                "query": _pd_v1_params(), 
                 "headers": _redacted_headers(pd_headers),
                 "json_body": {CF_REONIC_REQUEST_ID_KEY: reonic_request_id},
             }
