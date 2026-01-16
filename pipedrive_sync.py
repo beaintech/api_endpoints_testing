@@ -19,7 +19,7 @@ from reonic_config import (
 
 router = APIRouter()
 
-@router.post("/sync/pipedrive-to-reonic/leads")
+@router.post("/api/v2/leads/search")
 async def sync_leads_pipedrive_to_reonic(
     term: str = Query("solar"),
     limit: int = Query(2, ge=1, le=100),

@@ -208,7 +208,7 @@ It loads a mocked catalog from Reonic, converts it to Pipedrive product JSON, an
 
 Reonic does **not** create Pipedrive Leads. This section focuses on updating Deals / creating Activities.
 
-## 1) POST `/reonic_push_status_to_pipedrive`
+## 1) PATCH `/api/v2/deals/{deal_id}`
 
 Use when a Reonic status change should update an existing Pipedrive deal.
 
@@ -220,20 +220,23 @@ What it simulates:
 * Also attaches `reonic_project_id` and `reonic_technical_status` (playground fields)
 
 Example request:
+```bash
+DEAL_ID=5001
 
-curl -X POST "http://127.0.0.1:8000/api/reonic_push_status_to_pipedrive" \
+curl -X PATCH "http://127.0.0.1:8000/api/v2/deals/${DEAL_ID}" \
   -H "Content-Type: application/json" \
-  -d '{
-    "deal_id": 5001,
-    "status": "open",
-    "stage_id": 3,
-    "technical_status": "h360_ready",
-    "reonic_project_id": "reonic_proj_demo_001"
-  }'
+  -d "{
+    \"deal_id\": ${DEAL_ID},
+    \"stage_id\": 3,
+    \"status\": \"open\",
+    \"technical_status\": \"h360_ready\",
+    \"reonic_project_id\": \"reonic_proj_demo_001\"
+  }"
 
+```
 ---
 
-## 2) POST `/reonic_push_activity_to_pipedrive`
+## 2) POST `/api/v2/activities`
 
 Use when Reonic needs to create a task/log entry in Pipedrive, optionally linked to a deal/person/org.
 
@@ -244,7 +247,7 @@ What it simulates:
 Example request:
 
 ```bash
-curl -X POST "http://127.0.0.1:8000/reonic_push_activity_to_pipedrive" \
+curl -X POST "http://127.0.0.1:8000/api/v2/activities" \
   -H "Content-Type: application/json" \
   -d '{
     "subject": "Call customer about installation slot",
@@ -299,7 +302,7 @@ Response structure:
 
 ---
 
-## 4) POST `/pipedrive_push_leads_to_reonic`
+## 4) POST `/api/v2/leads/search`
 
 Use when you want to demonstrate the reverse direction:
 
@@ -319,7 +322,7 @@ Reonic receiver (mock placeholder):
 Example request:
 
 ```bash
-curl -X POST "http://127.0.0.1:8000/pipedrive_push_leads_to_reonic?term=solar"
+curl -X POST "http://127.0.0.1:8000/api/v2/leads/search?term=solar"
 ```
 
 What happens in mock:
