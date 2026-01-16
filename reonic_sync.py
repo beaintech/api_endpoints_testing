@@ -13,6 +13,12 @@ from utils.reonic_sync_types import (
     ReonicDealUpsert,
 )
 
+from utils.helper import (
+    _pd_v2_url,
+    _pd_headers,
+    _redacted_headers,
+)
+
 from pipedrive_config import (
     PIPEDRIVE_API_TOKEN,
     PIPEDRIVE_BASE_URL,
@@ -20,20 +26,18 @@ from pipedrive_config import (
 
 router = APIRouter()
 
-# 2) Reonic → Pipedrive: Update Deal Status
+# 1) Reonic → Pipedrive: Update Deal Status
 @router.post("/reonic_push_status_to_pipedrive")
 async def reonic_push_status_to_pipedrive(body: ReonicDealStatusUpdate):
     """
-    Reonic → Pipedrive: Update an existing deal (Mock).
-    Pipedrive: PATCH /deals/{id}
+    Reonic → Pipedrive: Update an existing deal status(mock preview only).
+    Pipedrive v2: PATCH /api/v2/deals/{id}
     """
-    if not PIPEDRIVE_API_TOKEN:
-        raise HTTPException(status_code=400, detail="Missing Pipedrive token")
+    pd_headers = _pd_headers()
 
-    url = f"{PIPEDRIVE_BASE_URL}/deals/{body.deal_id}"
-    params = {"api_token": PIPEDRIVE_API_TOKEN}
+    url = _pd_v2_url(f"/deals/{body.deal_id}")
 
-    payload = {
+    payload: Dict[str, Any] = {
         "stage_id": body.stage_id,
         "status": body.status,
         "probability": body.probability,
@@ -49,24 +53,23 @@ async def reonic_push_status_to_pipedrive(body: ReonicDealStatusUpdate):
 
     payload = {k: v for k, v in payload.items() if v is not None}
 
-    class MockResponse:
-        def __init__(self, payload, status_code=200):
-            self._payload = payload
-            self.status_code = status_code
+    return JSONResponse(
+        content={
+            "success": True,
+            "request": {
+                "method": "PATCH",
+                "endpoint": url,
+                "headers": _redacted_headers(pd_headers),
+                "json_body": payload,
+            },
+            "data": {"id": body.deal_id, **payload, "updated_from": "reonic-status-mock"},
+            "note": "Mock preview only: no real HTTP executed.",
+        },
+        status_code=200,
+    )
 
-        def json(self):
-            return self._payload
 
-    mock_body = {
-        "success": True,
-        "request": {"method": "PATCH", "endpoint": url, "query_params": params, "json_body": payload},
-        "data": {"id": body.deal_id, **payload, "updated_from": "reonic-status-mock"},
-    }
-
-    resp = MockResponse(mock_body, status_code=200)
-    return JSONResponse(content=resp.json(), status_code=resp.status_code)
-
-# 3) Reonic → Pipedrive: Create Activity
+# 2) Reonic → Pipedrive: Create Activity
 @router.post("/reonic_push_activity_to_pipedrive")
 async def reonic_push_activity_to_pipedrive(body: ReonicActivityPayload):
     """

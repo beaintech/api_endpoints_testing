@@ -221,21 +221,15 @@ What it simulates:
 
 Example request:
 
-```bash
-curl -X POST "http://127.0.0.1:8000/reonic_push_status_to_pipedrive" \
+curl -X POST "http://127.0.0.1:8000/api/reonic_push_status_to_pipedrive" \
   -H "Content-Type: application/json" \
   -d '{
     "deal_id": 5001,
-    "stage_id": 12,
     "status": "open",
-    "probability": 60,
-    "value_amount": 12000,
-    "value_currency": "EUR",
-    "expected_close_date": "2026-02-15",
-    "technical_status": "READY_FOR_INSTALL",
+    "stage_id": 3,
+    "technical_status": "h360_ready",
     "reonic_project_id": "reonic_proj_demo_001"
   }'
-```
 
 ---
 

@@ -8,13 +8,11 @@ from pipedrive_sync import router as pipedrive_router
 from organization import router as rorganization_router 
 
 app = FastAPI()
-app.include_router(leads_router, prefix="/leads", tags=["Leads"])
 app.include_router(products_router, prefix="/products", tags=["Products"])
-app.include_router(reonic_router, prefix="/reonic", tags=["Reonic Integration"])
 app.include_router(rorganization_router, prefix="/organization", tags=["organization"])
 
 app.include_router(pipedrive_router, prefix="/api", tags=["Pipedrive Integration"])
-
+app.include_router(reonic_router, prefix="/api", tags=["Reonic Integration"])
 
 # Note: in real use, set these as environment variables
 PIPEDRIVE_CLIENT_ID = os.getenv("PIPEDRIVE_CLIENT_ID", "YOUR_CLIENT_ID_HERE")
@@ -82,29 +80,6 @@ async def oauth_callback(request: Request):
     </html>
     """
     return HTMLResponse(content=html)
-
-# Here is the OAuth client ID and secret for Pipedrive.
-@app.get("/callback", response_class=HTMLResponse)
-async def oauth_callback_simple(request: Request):
-    """
-    EN: Receive the OAuth redirect from Pipedrive (?code=xxx).
-        This only displays the code and does not perform the real token exchange.
-    DE: Empfängt die OAuth-Weiterleitung von Pipedrive (?code=xxx).
-        Hier wird der Code nur angezeigt, ohne einen echten Token-Austausch durchzuführen.
-    """
-    params = dict(request.query_params)
-    code = params.get("code", "(no code)")
-    html = f"""
-    <html>
-      <body>
-        <h2>Pipedrive OAuth callback received code / Empfangener Code:</h2>
-        <p><b>{code}</b></p>
-        <p>All query parameters / Alle Query-Parameter: {params}</p>
-      </body>
-    </html>
-    """
-    return HTMLResponse(content=html)
-
 
 @app.get("/mock/pipedrive")
 async def mock_pipedrive():
