@@ -22,10 +22,21 @@ REONIC_REQUEST_CREATE_PATH = os.getenv(
     "/integrations/zapier/h360/requests",
 )
 
+REONIC_WEBHOOK_SUBSCRIBE_PATH_TMPL = os.getenv(
+    "REONIC_WEBHOOK_SUBSCRIBE_PATH_TMPL",
+    "/integrations/zapier/webhooks/{event}/subscribe",
+)
+
 def _reonic_request_create_url() -> str:
     """Build the full URL for creating a Reonic request."""
     base = (REONIC_API_BASE or "").rstrip("/")
     path = REONIC_REQUEST_CREATE_PATH if REONIC_REQUEST_CREATE_PATH.startswith("/") else f"/{REONIC_REQUEST_CREATE_PATH}"
+    return f"{base}{path}"
+
+def _reonic_webhook_subscribe_url(event: str) -> str:
+    base = (REONIC_API_BASE or "").rstrip("/")
+    path = REONIC_WEBHOOK_SUBSCRIBE_PATH_TMPL.format(event=event)
+    path = path if path.startswith("/") else f"/{path}"
     return f"{base}{path}"
 
 def build_reonic_headers() -> Dict[str, str]:

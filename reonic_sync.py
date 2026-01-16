@@ -6,13 +6,20 @@ from utils.helper import (
     REONIC_PROJECT_TO_PIPEDRIVE_DEAL
 )
 
+from reonic_config import (
+    REONIC_WEBHOOK_SUBSCRIBE_PATH_TMPL,
+    _reonic_webhook_subscribe_url,
+    build_reonic_headers
+)
+
 from utils.reonic_sync_types import (
     ReonicWebhookEvent,
     ReonicDealStatusUpdate,
     ReonicActivityPayload,
     ReonicProjectUpdate,
     ReonicDealUpsert,
-)
+    ReonicWebhookSubscribePayload
+) 
 
 from utils.helper import (
     _pd_v2_url,
@@ -101,76 +108,22 @@ async def reonic_push_activity_to_pipedrive(body: ReonicActivityPayload):
 
     return JSONResponse(content=jsonable_encoder(mock_body), status_code=201)
 
-# 3) Reonic → Pipedrive: Combined Project Deal + Create Activity
-@router.post("/reonic_push_project_update")
-async def reonic_push_project_update(body: ReonicProjectUpdate):
-    """
-    Reonic → Pipedrive: Project Update (Mock)
-    1) Update Deal technical status / stage / value
-    2) Create an Activity for the update
-    """
-
-    if not PIPEDRIVE_API_TOKEN:
-        raise HTTPException(status_code=400, detail="Missing Pipedrive token")
-
-    deal_url = f"{PIPEDRIVE_BASE_URL}/deals/{body.deal_id}"
-    activity_url = f"{PIPEDRIVE_BASE_URL}/activities"
-    params = {"api_token": PIPEDRIVE_API_TOKEN}
-
-    # Deal update payload
-    deal_payload = {
-        "stage_id": body.stage_id,
-        "expected_close_date": body.expected_go_live,
-        "owner_id": body.owner_id,
-        "reonic_technical_status": body.technical_status,
-        "reonic_project_id": body.reonic_project_id,
-    }
-
-    if body.value_amount is not None:
-        deal_payload["value"] = int(body.value_amount)
-    if body.value_currency is not None:
-        deal_payload["currency"] = body.value_currency
-
-    deal_payload = {k: v for k, v in deal_payload.items() if v is not None}
-
-    # Activity payload
-    activity_payload = {
-        "subject": f"Reonic project update: {body.technical_status}",
-        "type": "task",
-        "deal_id": body.deal_id,
-        "due_date": body.expected_go_live,
-        "note": body.progress_note or f"Technical status updated to {body.technical_status}",
-        "reonic_project_id": body.reonic_project_id,
-    }
-    activity_payload = {k: v for k, v in activity_payload.items() if v is not None}
-
-    class MockResponse:
-        def __init__(self, payload, status_code):
-            self._payload = payload
-            self.status_code = status_code
-
-        def json(self):
-            return self._payload
-
-    deal_mock = {
-        "success": True,
-        "request": {"method": "PATCH", "endpoint": deal_url, "query_params": params, "json_body": deal_payload},
-        "data": {"id": body.deal_id, **deal_payload, "updated_from": "reonic-project-update-mock"},
-    }
-
-    activity_mock = {
-        "success": True,
-        "request": {"method": "POST", "endpoint": activity_url, "query_params": params, "json_body": activity_payload},
-        "data": {"id": 7101, **activity_payload, "created_from": "reonic-project-update-mock"},
-    }
-
+# 3 ) Reonic → This service: Subscribe to webhook (Mock)
+@router.post("/integrations/zapier/webhooks/{event}/subscribe")
+async def subscribe_reonic_webhook(event: str, body: Dict[str, Any]):
+    hook_url = body.get("hookUrl")
     return JSONResponse(
-        content={"deal_update": deal_mock, "activity_created": activity_mock},
+        content={
+            "success": True,
+            "event": event,
+            "hookUrl": hook_url,
+            "note": "Mock subscribe preview only.",
+        },
         status_code=200,
     )
 
-# 5 ) Reonic → This service: project/event webhook (Mock)
-@router.post("/reonic_webhook_project_event")
+# 4) Reonic -> This service: project/event webhook (Mock)
+@router.post("/api/reonic/webhook/{event}")
 async def reonic_webhook_project_event(body: ReonicWebhookEvent):
     """
     Reonic → This service: project/event webhook (Mock)
@@ -185,7 +138,7 @@ async def reonic_webhook_project_event(body: ReonicWebhookEvent):
     if body.deal_id and body.technical_status:
         actions.append(
             {
-                "would_call": "/reonic_push_project_update",
+                "would_call": "/reonic/webhook/{event}",
                 "with": {
                     "deal_id": body.deal_id,
                     "technical_status": body.technical_status,
@@ -204,7 +157,7 @@ async def reonic_webhook_project_event(body: ReonicWebhookEvent):
     )
 
 
-# 6) lookup mapping (reonic_project_id -> pipedrive_deal_id)
+# 5) lookup mapping (reonic_project_id -> pipedrive_deal_id)
 @router.get("/lookup_deal_id_by_reonic_project/{reonic_project_id}")
 async def lookup_deal_id_by_reonic_project(reonic_project_id: str):
     """

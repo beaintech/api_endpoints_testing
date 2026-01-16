@@ -44,34 +44,6 @@ http://localhost:8000/docs
 
 ## Endpoint Rename Cheatsheet (Local Playground)
 
-These are your **LOCAL FastAPI routes** (mock playground), not official Pipedrive routes.
-
-If you previously had legacy names like `/get_leads`, treat them as old aliases. The **current canonical local routes** are on the right:
-
-/get_leads           -> /leads
-/get_lead/{id}       -> /leads/{id}
-/create_lead         -> /leads
-/update_lead/{id}    -> /leads/{id}
-/delete_lead/{id}    -> /leads/{id}
-
-(sync / push)
- /sync_leads                      -> /sync/pipedrive-to-reonic/leads
- /sync_reonic_to_pipedrive        -> /sync/reonic-to-pipedrive/projects
- /sync_reonic_products            -> /sync/reonic-to-pipedrive/products
-
-(products / orgs)
- /add_product                     -> /products
- /add_organization                -> /organizations
-
-(reonic -> pipedrive)
- /reonic_push_status_to_pipedrive -> /reonic_push_status_to_pipedrive
- /reonic_push_activity_to_pipedrive -> /reonic_push_activity_to_pipedrive
- /reonic_push_project_update      -> /reonic_push_project_update
-
-(webhook / mapping helpers)
- /reonic_webhook_project_event    -> /reonic_webhook_project_event
- /lookup_deal_id_by_reonic_project/{reonic_project_id} -> /lookup_deal_id_by_reonic_project/{reonic_project_id}
- /upsert_deal_by_reonic_project_id -> /upsert_deal_by_reonic_project_id
 
 ---
 
@@ -80,11 +52,6 @@ If you previously had legacy names like `/get_leads`, treat them as old aliases.
 OAuth callback test:
 
 /callback?code=test
-
-Mock data endpoints:
-
-/mock/pipedrive
-/mock/saas
 
 ---
 
@@ -95,17 +62,8 @@ GET     /leads/{lead_id}
 POST    /leads
 PATCH   /leads/{lead_id}
 DELETE  /leads/{lead_id}
-
-POST    /sync/pipedrive-to-reonic/leads
-POST    /sync/reonic-to-pipedrive/projects
-
 POST    /products
-POST    /sync/reonic-to-pipedrive/products
-
 POST    /organizations
-
-GET     /lookup_deal_id_by_reonic_project/{reonic_project_id}
-POST    /upsert_deal_by_reonic_project_id
 
 ---
 
@@ -266,44 +224,68 @@ Design choice:
 
 ---
 
-## 3) POST `/reonic_push_project_update`
+## 3) POST `/integrations/zapier/webhooks/{event}/subscribe`
 
-Use when a single Reonic “project update event” should produce two effects in Pipedrive:
+Use to register a webhook subscription in Reonic (Zapier API).
 
-* update the deal fields
-* create an activity describing the update
+What it represents:
+* In production, your service calls Reonic to subscribe to an event.
+* Reonic will later POST real event payloads to your hookUrl.
 
-What it simulates:
-
-* Deal patch: `PATCH /api/v2/deals/{deal_id}`
-* Activity create: `POST /api/v2/activities`
+What it does in this playground:
+* Returns a request preview only (no real HTTP executed).
+* Shows the exact Reonic endpoint + headers + JSON body that would be sent.
 
 Example request:
 
 ```bash
-curl -X POST "http://127.0.0.1:8000/reonic_push_project_update" \
+curl -X POST "http://127.0.0.1:8000/integrations/zapier/webhooks/request-created/subscribe" \
   -H "Content-Type: application/json" \
-  -d '{
-    "deal_id": 5001,
-    "technical_status": "IN_PROGRESS",
-    "expected_go_live": "2026-02-01",
-    "progress_note": "Panels delivered; installer booked.",
-    "reonic_project_id": "reonic_proj_demo_001",
-    "stage_id": 14,
-    "value_amount": 15500,
-    "value_currency": "EUR",
-    "owner_id": 1
-  }'
+  -d '{"hookUrl":"https://your-domain.com/reonic/webhook"}'
+
 ```
-
-Response structure:
-
-* `deal_update` block shows the mocked patch call + payload
-* `activity_created` block shows the mocked create call + payload
 
 ---
 
-## 4) POST `/api/v2/leads/search`
+## 4) POST `/reonic/webhook/{event}`
+
+Use as the demo webhook receiver endpoint for events coming from Reonic into your integration service.
+
+What it represents:
+
+* In production, Reonic will POST an event payload to this endpoint (your inbound webhook).
+* Your service parses the event and decides which downstream actions to run (update deal, create activity, etc.).
+
+What it does in mock:
+
+* Does not execute any real downstream HTTP calls.
+* Only returns `actions_planned` describing what it would call next.
+
+Example request:
+
+```bash
+curl -X POST "http://127.0.0.1:8000/api/reonic/webhook/{event}" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "event_type": "project_status_changed",
+    "reonic_project_id": "reonic_proj_demo_001",
+    "technical_status": "IN_PROGRESS",
+    "deal_id": 5001
+  }'
+```
+
+or
+
+```bash
+curl -X POST "http://127.0.0.1:8000/api/reonic/webhook/request-created" \
+  -H "Content-Type: application/json" \
+  -d '{"reonic_project_id":"reonic_proj_demo_001","technical_status":"h360_ready"}'
+
+```
+
+---
+
+## 3) POST `/api/v2/leads/search`
 
 Use when you want to demonstrate the reverse direction:
 
@@ -333,82 +315,6 @@ What happens in mock:
 
   * `external_id`, `title`, `source`, `person_id`, `owner_id`, `add_time`
 * Returns a mocked “Reonic import response” with `imported: N`
-
----
-
-## 5) POST `/reonic_webhook_project_event`
-
-Use as the demo “entry point” for events coming from Reonic into your integration service.
-
-What it represents:
-
-* In production, Reonic (or any upstream trigger) would POST an event here.
-* Your service decides what downstream actions should run.
-
-What it does in mock:
-
-* Does not call any downstream endpoint.
-* Only returns `actions_planned` describing what it would call next.
-
-Example request:
-
-```bash
-curl -X POST "http://127.0.0.1:8000/reonic_webhook_project_event" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "event_type": "project_status_changed",
-    "reonic_project_id": "reonic_proj_demo_001",
-    "technical_status": "IN_PROGRESS",
-    "deal_id": 5001
-  }'
-```
-
----
-
-## 6) GET `/lookup_deal_id_by_reonic_project/{reonic_project_id}`
-
-Use to show “where deal_id comes from”.
-Given a Reonic project id, which Pipedrive deal id is linked?
-
-What it uses:
-
-* `REONIC_PROJECT_TO_PIPEDRIVE_DEAL` in-memory dict
-
-Example:
-
-```bash
-curl "http://127.0.0.1:8000/lookup_deal_id_by_reonic_project/reonic_proj_demo_001"
-```
-
----
-
-## 7) POST `/upsert_deal_by_reonic_project_id`
-
-Idempotent sync behavior:
-
-* if mapping exists → update that deal
-* if mapping not found → create a deal and store mapping
-
-What it simulates:
-
-* Update path: `PATCH /api/v2/deals/{deal_id}`
-* Create path: `POST /api/v2/deals`
-
-Example request:
-
-```bash
-curl -X POST "http://127.0.0.1:8000/upsert_deal_by_reonic_project_id" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "reonic_project_id": "reonic_proj_demo_003",
-    "title": "Reonic Project reonic_proj_demo_003",
-    "technical_status": "NEW",
-    "stage_id": 10,
-    "value_amount": 8000,
-    "value_currency": "EUR",
-    "expected_close_date": "2026-03-01"
-  }'
-```
 
 ---
 

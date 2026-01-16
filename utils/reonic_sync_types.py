@@ -60,3 +60,6 @@ class ReonicDealUpsert(BaseModel):
     person_id: Optional[int] = None
     org_id: Optional[int] = None
     expected_close_date: Optional[str] = None  # YYYY-MM-DD
+
+class ReonicWebhookSubscribePayload(BaseModel):
+    hookUrl: str
