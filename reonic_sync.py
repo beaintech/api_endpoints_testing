@@ -82,8 +82,6 @@ async def reonic_push_activity_to_pipedrive(body: ReonicActivityPayload):
         "person_id": body.person_id,
         "org_id": body.org_id,
         "due_date": body.due_date,
-        "due_time": body.due_time,
-        "duration": body.duration,
         "note": body.note,
         "reonic_project_id": body.reonic_project_id,
     }

@@ -48,7 +48,7 @@ class LeadCreate(BaseModel):
     owner_id: Optional[int] = None
     label_ids: Optional[list[str]] = None
     person_id: Optional[int] = None
-    organization_id: Optional[int] = None
+    org_id: Optional[int] = None
     expected_close_date: Optional[str] = None  # YYYY-MM-DD
     visible_to: Optional[str] = None
     was_seen: Optional[bool] = None
@@ -60,7 +60,7 @@ class LeadUpdate(BaseModel):
     owner_id: Optional[int] = None
     label_ids: Optional[list[str]] = None
     person_id: Optional[int] = None
-    organization_id: Optional[int] = None
+    org_id: Optional[int] = None
     expected_close_date: Optional[str] = None
     visible_to: Optional[str] = None
     was_seen: Optional[bool] = None
@@ -97,7 +97,7 @@ async def get_leads():
                 "value": {"amount": 3000, "currency": "EUR"},
                 "owner_id": 1,
                 "person_id": 10,
-                "organization_id": 100,
+                "org_id": 100,
                 "add_time": "2025-01-01 10:00:00",
             },
             {
@@ -106,7 +106,7 @@ async def get_leads():
                 "value": {"amount": 5000, "currency": "USD"},
                 "owner_id": 2,
                 "person_id": 11,
-                "organization_id": 101,
+                "org_id": 101,
                 "add_time": "2025-01-02 15:30:00",
             },
         ],
@@ -159,7 +159,7 @@ async def get_lead(lead_id: str):
             "value": {"amount": 1234, "currency": "EUR"},
             "owner_id": 1,
             "person_id": 10,
-            "organization_id": 100,
+            "org_id": 100,
             "add_time": "2025-01-01 10:00:00",
         },
     }
@@ -198,7 +198,7 @@ async def create_lead(body: LeadCreate):
         "owner_id": body.owner_id,
         "label_ids": body.label_ids,
         "person_id": body.person_id,
-        "organization_id": body.organization_id,
+        "org_id": body.org_id,
         "expected_close_date": body.expected_close_date,
         "visible_to": body.visible_to,
         "was_seen": body.was_seen,
@@ -228,7 +228,7 @@ async def create_lead(body: LeadCreate):
             "owner_id": payload.get("owner_id"),
             "label_ids": payload.get("label_ids") or [],
             "person_id": payload.get("person_id"),
-            "organization_id": payload.get("organization_id"),
+            "org_id": payload.get("org_id"),
             "expected_close_date": payload.get("expected_close_date"),
             "visible_to": payload.get("visible_to"),
             "was_seen": payload.get("was_seen"),
@@ -272,8 +272,8 @@ async def update_lead(lead_id: str, body: LeadUpdate):
         payload["label_ids"] = body.label_ids
     if body.person_id is not None:
         payload["person_id"] = body.person_id
-    if body.organization_id is not None:
-        payload["organization_id"] = body.organization_id
+    if body.org_id is not None:
+        payload["org_id"] = body.org_id
     if body.expected_close_date is not None:
         payload["expected_close_date"] = body.expected_close_date
     if body.visible_to is not None:
@@ -403,7 +403,7 @@ async def search_leads(term: str, limit: int = 2):
             "value": {"amount": 3000, "currency": "EUR"},
             "owner_id": 1,
             "person_id": 10,
-            "organization_id": 100,
+            "org_id": 100,
             "add_time": "2025-01-01 10:00:00",
         },
         {
@@ -412,7 +412,7 @@ async def search_leads(term: str, limit: int = 2):
             "value": {"amount": 5000, "currency": "USD"},
             "owner_id": 2,
             "person_id": 11,
-            "organization_id": 101,
+            "org_id": 101,
             "add_time": "2025-01-02 15:30:00",
         },
     ][: max(0, min(limit, 50))]

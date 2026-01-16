@@ -28,7 +28,7 @@ class ReonicActivityPayload(BaseModel):
     type: Optional[str] = "task"
     deal_id: Optional[int] = None
     person_id: Optional[int] = None
-    organization_id: Optional[int] = None
+    org_id: Optional[int] = None
     due_date: Optional[str] = None  # YYYY-MM-DD
     note: Optional[str] = None
     reonic_project_id: Optional[str] = None

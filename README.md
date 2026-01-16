@@ -18,7 +18,7 @@ When you eventually replace mocks with real HTTP calls, **don’t assume everyth
 If you want the playground to feel “realistic”, keep ID formats consistent with Pipedrive:
 - `lead_id` (lead `id`) is a **UUID string** (e.g. `6b2f2dd0-5c3e-4f87-9a29-2f70e3f6f1a3`)
 - `person_id` is an **integer**
-- `organization_id` is an **integer**
+- `org_id` is an **integer**
 - `deal_id` is an **integer**
 
 ---
@@ -121,7 +121,7 @@ Swagger → `POST /leads` → “Try it out” → paste:
   "owner_id": 13293848,
   "label_ids": ["f981d20f-cd00-4e30-a406-06576a92058b"],
   "person_id": 1,
-  "organization_id": 1,
+  "org_id": 1,
   "expected_close_date": "2025-07-12",
   "visible_to": "1",
   "was_seen": true
@@ -129,7 +129,7 @@ Swagger → `POST /leads` → “Try it out” → paste:
 
 Notes:
 
-* `person_id` and `organization_id` are integers.
+* `person_id` and `org_id` are integers.
 * Lead value is shown as a single `value` object to match the common Leads payload shape: `{ "amount": ..., "currency": ... }`.
 
 ---
@@ -253,6 +253,7 @@ curl -X POST "http://127.0.0.1:8000/api/v2/activities" \
     "subject": "Call customer about installation slot",
     "type": "task",
     "deal_id": 5001,
+    "org_id": 100,
     "due_date": "2026-01-20",
     "note": "Customer asked for afternoon appointment.",
     "reonic_project_id": "reonic_proj_demo_001"
