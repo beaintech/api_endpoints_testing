@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException, Path
 from fastapi.responses import JSONResponse
 from fastapi.encoders import jsonable_encoder
-from typing import Any, Dict
+from typing import Any, Dict, Literal
 from utils.helper import (
     REONIC_PROJECT_TO_PIPEDRIVE_DEAL
 )
@@ -9,7 +9,10 @@ from utils.helper import (
 from reonic_config import (
     REONIC_WEBHOOK_SUBSCRIBE_PATH_TMPL,
     _reonic_webhook_subscribe_url,
-    build_reonic_headers
+    build_reonic_headers,
+    map_reonic_to_pipedrive_deal_id,
+    _preview,
+    _compact,
 )
 
 from utils.reonic_sync_types import (
@@ -18,7 +21,8 @@ from utils.reonic_sync_types import (
     ReonicActivityPayload,
     ReonicProjectUpdate,
     ReonicDealUpsert,
-    ReonicWebhookSubscribePayload
+    ReonicWebhookSubscribePayload,
+    ReonicZapierWebhookIn
 ) 
 
 from utils.helper import (
@@ -122,7 +126,31 @@ async def subscribe_reonic_webhook(event: str, body: Dict[str, Any]):
         status_code=200,
     )
 
-# 4) Reonic -> This service: project/event webhook (Mock)  + CLOSED LOOP PREVIEW
+# 4) Reonic -> This service: Zapier-style webhook + OFFICIAL-STYLE PREVIEW
+AllowedEvent = Literal["request-created", "offer-created", "offer-signed"]
+
+@router.post("/api/reonic/webhook/{event}")
+async def reonic_webhook_in(event: AllowedEvent, body: ReonicZapierWebhookIn):
+    # webhook gives an object id, we poll REST for details next
+    reonic_headers = {"X-Authorization": "<REONIC_API_KEY>", "accept": "application/json"}
+    reonic_get_offer = _preview(
+        "GET",
+        f"/rest/v2/clients/{body.client_id}/h360/offers/{body.id}",
+        reonic_headers,
+    )
+
+    return JSONResponse(
+        content={
+            "success": True,
+            "event": event,
+            "received": body.model_dump(),
+            "next_reonic_poll_preview": reonic_get_offer,
+            "note": "Webhook received. Next: poll Reonic REST, then map to Pipedrive deal_id and update Pipedrive.",
+        },
+        status_code=200,
+    )
+
+# 5) Reonic -> This service: project/event webhook (Mock)  + CLOSED LOOP PREVIEW
 @router.post("/api/reonic/webhook/{event}")
 async def reonic_webhook_project_event(event: str, body: ReonicWebhookEvent):
     """

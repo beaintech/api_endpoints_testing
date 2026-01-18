@@ -63,3 +63,7 @@ class ReonicDealUpsert(BaseModel):
 
 class ReonicWebhookSubscribePayload(BaseModel):
     hookUrl: str
+
+class ReonicZapierWebhookIn(BaseModel):
+    id: str                 # Reonic offer/request UUID
+    client_id: str          # Reonic clientId (needed for REST GET)

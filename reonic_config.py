@@ -1,5 +1,5 @@
 import os
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 # IMPORTANT:
 # docs.reonic.de is documentation. The real API base should come from your Reonic integration setup.
@@ -87,3 +87,24 @@ def _transform_found_leads_to_reonic_create_requests(found: List[Dict[str, Any]]
             }
         )
     return out
+
+def _compact(d: Dict[str, Any]) -> Dict[str, Any]:
+    return {k: v for k, v in d.items() if v is not None}
+
+def _preview(method: str, endpoint: str, headers: Dict[str, Any], json_body: Optional[Dict[str, Any]] = None, query: Optional[Dict[str, Any]] = None):
+    out = {"method": method, "endpoint": endpoint, "headers": headers}
+    if query is not None:
+        out["query"] = query
+    if json_body is not None:
+        out["json_body"] = json_body
+    return out
+
+
+def map_reonic_to_pipedrive_deal_id(reonic_id: str) -> Optional[int]:
+    """
+    TODO: implement mapping:
+    - lookup in DB or SQLlite table
+    - or query Pipedrive by custom field containing reonic_id
+    - or any stored mapping table
+    """
+    return None
