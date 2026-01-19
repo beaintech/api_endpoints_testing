@@ -154,14 +154,6 @@ This fetches mocked Reonic projects, transforms them, and returns the mocked req
 
 ---
 
-## Sync Products (Local)
-
-POST "http://127.0.0.1:8000/sync/reonic-to-pipedrive/products"
-
-It loads a mocked catalog from Reonic, converts it to Pipedrive product JSON, and returns the mocked POST bodies.
-
----
-
 # Reonic → Pipedrive (Deals & Activities)
 
 Reonic does **not** create Pipedrive Leads. This section focuses on updating Deals / creating Activities.
@@ -329,27 +321,87 @@ What happens in mock:
 
 # Product Endpoints
 
-## Add a Product (POST /products)
+## Product mock: POST `/products` (Create Product)
 
-Example JSON:
+Use when you want to demonstrate the “product creation” part of your Pipedrive flow locally:
+
+* Send a Product payload that looks like Pipedrive
+* Validate your request shape and field filtering
+* Get back a simple “real-looking” response with a `data` object
+
+What it simulates:
+
+* Pipedrive create product: `POST https://{company}.pipedrive.com/api/v2/products?api_token=TOKEN`
+* A successful create returns HTTP 201 and a product object
+
+What this endpoint actually does:
+
+* This is a pure mock. No `requests/httpx` calls are made.
+* It only checks that `PIPEDRIVE_API_TOKEN` exists, so you don’t test with an empty env.
+* It builds a clean payload by removing any `null` fields.
+* It returns a mocked product response with a fixed `id: 501` and echoes your fields back.
+
+Required config:
+
+* `PIPEDRIVE_API_TOKEN` must be set (otherwise the endpoint returns 400)
+* `PIPEDRIVE_BASE_URL` should be the company root domain only, e.g. `https://yourcompany.pipedrive.com` (no `/v1`, no `/api/v2`)
+
+Request body schema:
+
+* `name` is required
+* Optional fields: `code`, `unit`, `tax`, `active_flag`, `selectable`, `visible_to`, `owner_id`
+* Optional `prices`: list of objects with `price`, `currency`, `cost`, `overhead_cost`
+
+Example request:
+
+```bash
+curl -X POST "http://127.0.0.1:8000/products" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Reonic EV Charger",
+    "code": "EV-CHR-10",
+    "unit": "pcs",
+    "tax": 19,
+    "active_flag": 1,
+    "selectable": 1,
+    "visible_to": "1",
+    "owner_id": 502,
+    "prices": [{"price": 2300, "currency": "EUR"}]
+  }'
+```
+
+What happens in mock:
+
+* Filters out all fields that are `null`
+* Returns HTTP 201 and a minimal response shaped like:
+
+```json
 {
-  "name": "Test Product",
-  "code": "PRD-001",
-  "unit": "pcs",
-  "tax": 19,
-  "active_flag": 1,
-  "selectable": 1,
-  "visible_to": "1",
-  "owner_id": 999,
-  "prices": [
-    {
-      "price": 120,
-      "currency": "EUR",
-      "cost": 60,
-      "overhead_cost": 10
-    }
-  ]
+  "data": {
+    "id": 501,
+    "name": "Reonic EV Charger",
+    "code": "EV-CHR-10",
+    "unit": "pcs",
+    "tax": 19,
+    "active_flag": 1,
+    "selectable": 1,
+    "visible_to": "1",
+    "owner_id": 502,
+    "prices": [
+      { "price": 2300, "currency": "EUR" }
+    ]
+  }
 }
+```
+
+---
+
+## Notes and limitations
+
+* All responses are mocked. No external Pipedrive calls exist here.
+* The returned `id` is fixed (`501`) by design for predictable testing.
+* `prices` defaults to an empty list in the response if you omit it in the request.
+* This endpoint is only meant to validate request/response shape and payload transformation.
 
 ---
 
